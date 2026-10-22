@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthLayout } from "@/components/auth-layout";
-import { ShieldIcon } from "@/components/icons";
+import { ChevronLeft, ShieldIcon } from "@/components/icons";
 import { api, ApiError } from "@/lib/api";
 import { useMe } from "@/lib/use-me";
 
@@ -54,8 +54,19 @@ export default function ConsentPage() {
     );
   }
 
+  // Back goes to the picker when there is a choice to make; otherwise it means "not my number".
+  const canPick = (me?.patients.length ?? 0) > 1;
+  async function goBack() {
+    if (canPick) return router.replace("/choose");
+    await api.post("/auth/logout").catch(() => undefined);
+    router.replace("/login");
+  }
+
   return (
     <AuthLayout>
+      <button type="button" className="mb-6 inline-flex min-h-[40px] items-center gap-1 text-sm font-semibold text-brand" disabled={!me} onClick={() => void goBack()}>
+        <ChevronLeft size={16} /> {canPick ? "Back to patients" : "Use a different number"}
+      </button>
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-soft text-brand"><ShieldIcon size={24} /></span>
       <h2 className="mt-5 text-[30px] leading-tight font-extrabold text-ink-strong">Your data, your consent</h2>
       <p className="mt-2 text-[15px] text-muted">

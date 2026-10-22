@@ -48,6 +48,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
   const codeRef = useRef<HTMLInputElement>(null);
+  const mobileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -57,9 +58,32 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (step === "code") codeRef.current?.focus();
+    // Back on the number step: keep what was typed and select it, so a wrong number is quick to fix.
+    else mobileRef.current?.select();
   }, [step]);
 
+  // The code step is its own browser history entry, so the phone's or browser's Back button returns to
+  // the number step instead of leaving the page.
+  useEffect(() => {
+    const onPop = () => {
+      setStep("mobile");
+      setCode("");
+      setError(null);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   const digits = mobile.replace(/\D/g, "");
+
+  function changeNumber() {
+    if (window.history.state?.p360Step === "code") window.history.back();
+    else {
+      setStep("mobile");
+      setCode("");
+      setError(null);
+    }
+  }
 
   async function sendCode() {
     setBusy(true);
@@ -68,7 +92,10 @@ export default function LoginPage() {
       const r = await api.post<SendOk>("/auth/patient/otp/send", { mobile: digits });
       setResendIn(r.resendAfterSeconds);
       setCode("");
-      setStep("code");
+      if (step === "mobile") {
+        window.history.pushState({ ...window.history.state, p360Step: "code" }, "");
+        setStep("code");
+      }
     } catch (e) {
       if (e instanceof ApiError && e.code === "TOO_SOON" && step === "code") setResendIn(Number(e.body.retryAfterSeconds));
       setError(sendError(e));
@@ -111,6 +138,7 @@ export default function LoginPage() {
             <span className="border-r border-line px-4 text-base font-semibold">+91</span>
             <input
               id="mobile"
+              ref={mobileRef}
               className="min-h-[50px] flex-1 rounded-r-[var(--radius-control)] bg-transparent px-4 text-base outline-none placeholder:text-[#9aabb2] focus-visible:outline-none"
               inputMode="numeric"
               autoComplete="tel-national"
@@ -135,14 +163,20 @@ export default function LoginPage() {
             if (code.length === OTP_LENGTH) void verify();
           }}
         >
-          <button type="button" className="mb-6 inline-flex items-center gap-1 text-sm font-semibold text-brand" onClick={() => { setStep("mobile"); setError(null); }}>
-            <ChevronLeft size={16} /> Change number
+          <button type="button" className="mb-6 inline-flex min-h-[40px] items-center gap-1 text-sm font-semibold text-brand" onClick={changeNumber}>
+            <ChevronLeft size={16} /> Back
           </button>
           <h2 className="text-[30px] leading-tight font-extrabold text-ink-strong">Enter the code</h2>
           <p className="mt-2 text-[15px] text-muted">
-            If this number is registered with us, we have sent a {OTP_LENGTH}-digit code on WhatsApp to{" "}
-            <b className="text-ink">{formatMobile(`+91${digits}`)}</b>.
+            If this number is registered with us, we have sent a {OTP_LENGTH}-digit code on WhatsApp to:
           </p>
+          {/* The number, with a clear way to fix it if it was typed wrong. */}
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-[var(--radius-control)] border border-line bg-white px-4 py-3">
+            <span className="text-base font-bold">{formatMobile(`+91${digits}`)}</span>
+            <button type="button" className="text-sm font-semibold text-brand hover:underline" onClick={changeNumber}>
+              Change number
+            </button>
+          </div>
 
           <label htmlFor="code" className="mt-8 block text-sm font-semibold">One-time code</label>
           <input
@@ -166,6 +200,12 @@ export default function LoginPage() {
             <ClockIcon size={18} />
             {resendIn > 0 ? `Resend code in ${resendIn}s` : "Resend code"}
           </button>
+          <p className="mt-6 text-center text-sm text-muted">
+            Wrong number?{" "}
+            <button type="button" className="font-semibold text-brand hover:underline" onClick={changeNumber}>
+              Enter a different one
+            </button>
+          </p>
         </form>
       )}
     </AuthLayout>

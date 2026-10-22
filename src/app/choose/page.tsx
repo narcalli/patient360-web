@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthLayout } from "@/components/auth-layout";
-import { ChevronRight } from "@/components/icons";
+import { ChevronLeft, ChevronRight } from "@/components/icons";
 import { api } from "@/lib/api";
 import { ageLabel, formatMobile, initials, relationLabel } from "@/lib/format";
 import { useMe } from "@/lib/use-me";
@@ -24,8 +24,16 @@ export default function ChoosePatientPage() {
     }
   }
 
+  async function switchNumber() {
+    await api.post("/auth/logout").catch(() => undefined);
+    router.replace("/login");
+  }
+
   return (
     <AuthLayout>
+      <button type="button" className="mb-6 inline-flex min-h-[40px] items-center gap-1 text-sm font-semibold text-brand" onClick={() => void switchNumber()}>
+        <ChevronLeft size={16} /> Use a different number
+      </button>
       <h2 className="text-[30px] leading-tight font-extrabold text-ink-strong">Whose records?</h2>
       <p className="mt-2 text-[15px] text-muted">
         {me ? <>{me.patients.length} people are linked to {formatMobile(me.mobile)}. You can switch any time.</> : "Loading…"}
