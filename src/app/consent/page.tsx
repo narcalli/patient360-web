@@ -31,7 +31,7 @@ export default function ConsentPage() {
     setError(null);
     try {
       await api.post("/consent", { version: consent.notice.version, decision });
-      if (decision === "ACCEPTED") router.replace("/home");
+      if (decision === "ACCEPTED") router.replace("/patient");
       else setDeclined(true);
     } catch (e) {
       // A newer notice was published while this one was open: show the new one.
@@ -45,8 +45,8 @@ export default function ConsentPage() {
   if (declined) {
     return (
       <AuthLayout>
-        <h2 className="text-[30px] leading-tight font-extrabold text-ink-strong">You&apos;re signed out</h2>
-        <p className="mt-3 text-[15px] text-muted">
+        <h1 className="text-[28px] leading-tight font-extrabold">You&apos;re signed out</h1>
+        <p className="mt-3 text-[15px] leading-relaxed text-muted">
           You need to agree to how we use your data to use the patient portal. You can sign in again whenever you&apos;re ready.
         </p>
         <button className="btn mt-8 w-full" onClick={() => router.replace("/login")}>Back to sign in</button>
@@ -68,8 +68,8 @@ export default function ConsentPage() {
         <ChevronLeft size={16} /> {canPick ? "Back to patients" : "Use a different number"}
       </button>
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-soft text-brand"><ShieldIcon size={24} /></span>
-      <h2 className="mt-5 text-[30px] leading-tight font-extrabold text-ink-strong">Your data, your consent</h2>
-      <p className="mt-2 text-[15px] text-muted">
+      <h1 className="mt-5 text-[28px] leading-tight font-extrabold">Your data, your consent</h1>
+      <p className="mt-2 text-[15px] leading-relaxed text-muted">
         {patient ? <>Before you see <b className="text-ink">{patient.fullName}</b>&apos;s records, please read how we use this data.</> : "Loading…"}
       </p>
 

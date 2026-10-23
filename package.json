@@ -9,12 +9,15 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "next dev -p 3001",
-    "build": "next build",
-    "typecheck": "tsc --noEmit"
+    "dev": "next dev -p 3002",
+    "build": "node scripts/check-white-label.mjs && next build",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.ts",
+    "check:white-label": "node scripts/check-white-label.mjs",
+    "check": "tsc --noEmit && node scripts/check-white-label.mjs && node --test test/*.test.ts"
   },
   "dependencies": {
-    "next": "16.4.0",
+    "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

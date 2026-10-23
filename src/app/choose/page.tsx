@@ -18,7 +18,7 @@ export default function ChoosePatientPage() {
     setBusy(patientId);
     try {
       await api.put("/me/active-patient", { patientId });
-      router.replace("/consent");
+      router.replace("/patient");
     } finally {
       setBusy(null);
     }
@@ -34,8 +34,8 @@ export default function ChoosePatientPage() {
       <button type="button" className="mb-6 inline-flex min-h-[40px] items-center gap-1 text-sm font-semibold text-brand" onClick={() => void switchNumber()}>
         <ChevronLeft size={16} /> Use a different number
       </button>
-      <h2 className="text-[30px] leading-tight font-extrabold text-ink-strong">Whose records?</h2>
-      <p className="mt-2 text-[15px] text-muted">
+      <h1 className="text-[28px] leading-tight font-extrabold">Whose records?</h1>
+      <p className="mt-2 text-[15px] leading-relaxed text-muted">
         {me ? <>{me.patients.length} people are linked to {formatMobile(me.mobile)}. You can switch any time.</> : "Loading…"}
       </p>
       <ul className="mt-8 space-y-3">
@@ -46,7 +46,7 @@ export default function ChoosePatientPage() {
               disabled={busy !== null}
               onClick={() => void choose(p.id)}
             >
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-soft font-bold text-brand">{initials(p.fullName)}</span>
+              <span className="avatar h-12 w-12" aria-hidden="true">{initials(p.fullName)}</span>
               <span className="flex-1">
                 <span className="block font-bold">{p.fullName}</span>
                 <span className="block text-sm text-muted">

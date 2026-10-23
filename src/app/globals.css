@@ -1,69 +1,202 @@
 @import "tailwindcss";
 
-/* Design tokens. --color-brand and --color-ink-strong are overwritten at runtime from the hospital's
-   config (white-label), so nothing hospital-specific is hard-coded in components. */
+/* dark: targets the resolved theme on <html> (set before first paint by THEME_BOOT_SCRIPT), not only the OS setting,
+   so a patient's own Light / Dark / System choice wins. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Design tokens. Components use these semantic names only, never raw colours.
+   Neutrals are defined for light here and for dark below; the two sets are designed together, and NEUTRALS in
+   src/lib/color.ts mirrors canvas, surface, subtle and ink (test/color.test.ts checks they match).
+   Brand colours come from hospital_config at runtime: BrandProvider sets the --p360-* variables, already adjusted to
+   read at 4.5:1, so nothing hospital-specific is written here. The fallbacks are neutral and only show when the
+   hospital has no colours set. */
 @theme {
-  --font-sans: var(--font-manrope), system-ui, sans-serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-heading), var(--font-body), ui-sans-serif, system-ui, sans-serif;
 
-  --color-brand: #00798c;
-  --color-brand-hover: color-mix(in srgb, var(--color-brand) 85%, black);
-  --color-brand-soft: color-mix(in srgb, var(--color-brand) 11%, white);
-  --color-brand-panel: color-mix(in srgb, var(--color-brand) 35%, #00d3ea);
-  --color-ink-strong: #0f2e6e;
+  --color-sidebar: #FFFFFF;
+  --color-canvas: #F4F7F8;
+  --color-surface: #FFFFFF;
+  --color-subtle: #F0F4F6;
+  --color-line: #DCE4E8;
+  --color-line-strong: #BCCAD0;
+  --color-field-line: #84949C;
+  --color-ink: #0F1B22;
+  --color-ink-soft: #33444D;
+  --color-muted: #55666F;
+  --color-placeholder: #66767E;
+  --color-overlay: #0B151A;
 
-  --color-ink: #14212b;
-  --color-muted: #52636b;
-  --color-line: #dce6ea;
-  --color-line-strong: #b5c8cf;
-  --color-canvas: #f3f7f9;
+  --color-ok: #1E7A46;
+  --color-ok-soft: #E6F4EC;
+  --color-warn: #8A5A00;
+  --color-warn-soft: #FDF3E1;
+  --color-bad: #B42318;
+  --color-bad-soft: #FDECEA;
 
-  --color-ok: #2e7d4f;
-  --color-ok-soft: #e7f4ec;
-  --color-warn: #a86a00;
-  --color-warn-soft: #fdf3e1;
-  --color-bad: #b3261e;
-  --color-bad-soft: #fdecea;
+  --color-brand: var(--p360-brand, #3B5B6E);
+  --color-on-brand: var(--p360-on-brand, #FFFFFF);
+  --color-brand-hover: color-mix(in oklab, var(--color-brand) 86%, var(--color-ink));
+  --color-brand-soft: color-mix(in oklab, var(--color-brand) 11%, var(--color-surface));
+  --color-brand-line: color-mix(in oklab, var(--color-brand) 40%, var(--color-surface));
+  --color-heading: var(--p360-heading, var(--color-ink));
+  --color-panel: var(--p360-panel, color-mix(in oklab, var(--color-brand) 30%, #FFFFFF));
+  --color-on-panel: var(--p360-on-panel, #0F1B22);
 
-  --radius-card: 18px;
-  --radius-control: 12px;
+  --radius-card: 16px;
+  --radius-control: 10px;
+
+  --shadow-card: 0 1px 2px color-mix(in srgb, var(--color-overlay) 6%, transparent);
+  --shadow-pop: 0 16px 40px -12px color-mix(in srgb, var(--color-overlay) 30%, transparent), 0 2px 6px color-mix(in srgb, var(--color-overlay) 8%, transparent);
+
+  --animate-fade-in: fade-in 160ms ease-out;
+  @keyframes drawer-in {
+    from {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
 }
 
 @layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  /* Dark: warm neutral greys (no blue cast), in three steps: sidebar darkest, page, then cards and inputs.
+     Off-white text instead of pure white, secondary text still 4.5:1+, and desaturated status colours.
+     The sign-in panel turns into the dark sidebar colour instead of a bright brand block. */
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --color-sidebar: #1F1E1D;
+    --color-canvas: #262624;
+    --color-surface: #30302E;
+    --color-subtle: #3A3936;
+    --color-line: #3E3D39;
+    --color-line-strong: #55534D;
+    --color-field-line: #807D75;
+    --color-ink: #F5F4EF;
+    --color-ink-soft: #D6D4CB;
+    --color-muted: #ABA89F;
+    --color-placeholder: #9C998F;
+    --color-overlay: #000000;
+
+    --color-ok: #7FD1A0;
+    --color-ok-soft: #1F2D24;
+    --color-warn: #E9B45A;
+    --color-warn-soft: #352B1A;
+    --color-bad: #F29A90;
+    --color-bad-soft: #3B2422;
+
+    --color-brand: var(--p360-brand-dark, #8FB8C9);
+    --color-on-brand: var(--p360-on-brand-dark, #1F1E1D);
+    --color-heading: var(--color-ink);
+    --color-panel: var(--color-sidebar);
+    --color-on-panel: var(--color-ink);
+    --shadow-card: 0 0 0 transparent;
+  }
+
   html,
   body {
     background: var(--color-canvas);
     color: var(--color-ink);
   }
 
+  body {
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    color: var(--color-heading);
+    text-wrap: balance;
+  }
+
+  button,
+  [role="button"],
+  a[href],
+  summary,
+  label[for] {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
   :focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--color-brand) 45%, white);
+    outline: 2px solid var(--color-brand);
     outline-offset: 2px;
+  }
+
+  /* Native controls (date picker) follow the theme. */
+  input,
+  select,
+  textarea {
+    color-scheme: inherit;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 @layer components {
   .card {
-    @apply rounded-[var(--radius-card)] border border-line bg-white;
+    @apply rounded-[var(--radius-card)] border border-line bg-surface shadow-[var(--shadow-card)];
   }
   .btn {
-    @apply inline-flex min-h-[46px] items-center justify-center gap-2 rounded-[var(--radius-control)] bg-brand px-5 text-[15px] font-semibold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-brand px-5 text-[15px] font-semibold text-on-brand transition-colors duration-150 hover:bg-brand-hover disabled:opacity-50 disabled:hover:bg-brand;
   }
   .btn-secondary {
-    @apply inline-flex min-h-[46px] items-center justify-center gap-2 rounded-[var(--radius-control)] border border-line bg-white px-[18px] text-[15px] font-semibold text-ink transition-colors hover:border-line-strong hover:bg-[#f8fbfc] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-control)] border border-line-strong bg-surface px-4 text-[15px] font-semibold text-ink transition-colors duration-150 hover:bg-subtle disabled:opacity-50;
   }
-  .chip {
-    @apply inline-flex min-h-[38px] items-center rounded-full border border-line bg-white px-4 text-sm font-semibold whitespace-nowrap text-ink hover:border-line-strong;
-  }
-  .chip-on {
-    @apply border-brand bg-brand text-white hover:border-brand;
-  }
-  .field {
-    @apply min-h-[50px] w-full rounded-[var(--radius-control)] border border-line-strong bg-white px-4 text-base text-ink outline-none placeholder:text-[#9aabb2] focus:border-brand;
-  }
-  .label {
-    @apply text-xs font-semibold tracking-[0.06em] text-muted uppercase;
+  .btn-ghost {
+    @apply inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[var(--radius-control)] px-3 text-sm font-semibold text-brand transition-colors duration-150 hover:bg-brand-soft disabled:opacity-50;
   }
   .icon-btn {
-    @apply inline-flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full border border-line bg-white text-ink hover:border-line-strong;
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line bg-surface text-ink-soft transition-colors duration-150 hover:border-line-strong hover:bg-subtle hover:text-ink disabled:opacity-50 lg:h-10 lg:w-10;
+  }
+  .chip {
+    @apply inline-flex min-h-10 items-center gap-2 rounded-full border border-line bg-surface px-3.5 text-sm font-semibold whitespace-nowrap text-ink-soft transition-colors duration-150 hover:border-line-strong hover:text-ink aria-pressed:border-brand aria-pressed:bg-brand aria-pressed:text-on-brand;
+  }
+  .field {
+    @apply min-h-12 w-full rounded-[var(--radius-control)] border border-field-line bg-surface px-4 text-base text-ink transition-colors outline-none placeholder:text-placeholder focus:border-brand;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold tracking-[0.06em] text-muted uppercase;
+  }
+  .badge {
+    @apply inline-flex h-6 items-center gap-1 rounded-full px-2.5 text-xs font-semibold whitespace-nowrap;
+  }
+  /* Ink text with a brand dot: brand-coloured small text on the brand tint can't be guaranteed 4.5:1. */
+  .badge-new {
+    @apply inline-flex h-6 items-center gap-1.5 rounded-full bg-brand-soft px-2.5 text-xs font-semibold whitespace-nowrap text-ink ring-1 ring-brand-line ring-inset before:h-1.5 before:w-1.5 before:rounded-full before:bg-brand before:content-[''];
+  }
+  .skeleton {
+    @apply rounded-md bg-subtle motion-safe:animate-pulse;
+  }
+  .avatar {
+    @apply inline-flex shrink-0 items-center justify-center rounded-full bg-brand font-display font-bold text-on-brand;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }
