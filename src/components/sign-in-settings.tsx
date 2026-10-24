@@ -9,7 +9,8 @@ import { PasswordField } from "./sign-in-steps";
 
 /** GET/PUT /api/session/sign-in: the signed-in person's own ways in. */
 interface Settings {
-  mobile: string;
+  /** Null for staff added with an email only (admins usually are). */
+  mobile: string | null;
   email: string | null;
   hasPassword: boolean;
   /** Admins: the email is fixed (it names them in the authenticator app too). */
@@ -41,7 +42,7 @@ function saveErrors(e: unknown, min: number): Errors {
 }
 
 /**
- * How this person signs in: their mobile and a WhatsApp code always; an email and password once they add one.
+ * How this person signs in: their mobile and a WhatsApp code if they have a mobile; an email and password once they add one.
  * Patients see this on Profile, staff on Account. Changing the password signs other devices out.
  */
 export function SignInSettings({ className = "" }: { className?: string }) {
@@ -119,7 +120,7 @@ export function SignInSettings({ className = "" }: { className?: string }) {
         </div>
       ) : (
         <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
-          <Way icon={<PhoneIcon size={18} />} label="Mobile and WhatsApp code" value={formatMobile(s.mobile)} />
+          <Way icon={<PhoneIcon size={18} />} label="Mobile and WhatsApp code" value={s.mobile ? formatMobile(s.mobile) : null} empty="No mobile number" />
           <Way
             icon={<MailIcon size={18} />}
             label="Email and password"

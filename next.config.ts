@@ -11,9 +11,12 @@ export default function config(phase: string): NextConfig {
     const api = process.env.API_ORIGIN ?? "http://localhost:3000";
     const documentsOrigin = process.env.DOCUMENTS_ORIGIN;
     if (!documentsOrigin) throw new Error("Set DOCUMENTS_ORIGIN in .env.local (see .env.example)");
+    // Extra hosts (e.g. a tunnel such as *.ngrok-free.app) allowed to load the dev server's /_next resources.
+    const allowedDevOrigins = (process.env.DEV_ALLOWED_ORIGINS ?? "").split(",").map((h) => h.trim()).filter(Boolean);
     return {
       // The dev badge defaults to bottom-left, on top of the sidebar's account row.
       devIndicators: { position: "bottom-right" },
+      allowedDevOrigins,
       async rewrites() {
         return [{ source: "/api/:path*", destination: `${api}/api/:path*` }];
       },

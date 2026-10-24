@@ -180,7 +180,7 @@ function Users() {
       )}
       {action?.kind === "authenticator" && (
         <ConfirmDialog title={`Reset ${action.user.fullName}'s two-step sign-in?`} confirmLabel="Reset" busy={busy} onConfirm={() => void run(action)} onCancel={() => setAction(null)}>
-          For a lost or new phone. They are signed out everywhere, and at their next sign-in they scan a new QR code with their authenticator app.
+          For when they've lost every phone with their authenticator app. All their apps are removed and they're signed out everywhere; at their next sign-in they scan a new QR code.
         </ConfirmDialog>
       )}
       {toast.ui}

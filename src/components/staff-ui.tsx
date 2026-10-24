@@ -302,6 +302,8 @@ export function FormDialog({
   children,
   submitLabel,
   busy,
+  busyLabel = "Saving…",
+  destructive = false,
   canSubmit = true,
   error,
   onSubmit,
@@ -312,6 +314,9 @@ export function FormDialog({
   children: React.ReactNode;
   submitLabel: string;
   busy: boolean;
+  busyLabel?: string;
+  /** Removes something: the submit button is red, as in ConfirmDialog. */
+  destructive?: boolean;
   canSubmit?: boolean;
   error?: string | null;
   onSubmit: () => void;
@@ -360,7 +365,9 @@ export function FormDialog({
         )}
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button type="button" className="btn-secondary" disabled={busy} onClick={onClose}>Cancel</button>
-          <button className="btn" disabled={busy || !canSubmit}>{busy ? "Saving…" : submitLabel}</button>
+          <button className={destructive ? "btn bg-bad text-surface hover:bg-bad/90 disabled:hover:bg-bad" : "btn"} disabled={busy || !canSubmit}>
+            {busy ? busyLabel : submitLabel}
+          </button>
         </div>
       </form>
     </dialog>

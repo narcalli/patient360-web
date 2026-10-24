@@ -206,7 +206,7 @@ function CodeStep({ step, onBack, onExpired, onNext }: StepProps<Extract<Outcome
               <QrCode matrix={enrol.qr} label="QR code to add this account to your authenticator app" />
               <SetupKey secret={enrol.secret} />
             </Step>
-            <Step n={3}>Type the 6-digit code the app shows.</Step>
+            <Step n={3}>Type the 6-digit code the app shows. You can add a second phone later, under Account.</Step>
           </ol>
         </>
       ) : (
@@ -236,7 +236,7 @@ function CodeStep({ step, onBack, onExpired, onNext }: StepProps<Extract<Outcome
       </button>
       {!enrol && (
         <p className="mt-6 flex items-start gap-2 text-sm text-muted">
-          <KeyIcon size={16} className="mt-0.5 shrink-0" /> Lost your phone? Ask the portal&apos;s technical team to reset your two-step sign-in.
+          <KeyIcon size={16} className="mt-0.5 shrink-0" /> Lost your phone? Use a code from another authenticator app you added, or ask the portal&apos;s technical team to reset your two-step sign-in.
         </p>
       )}
     </form>
@@ -256,7 +256,7 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
  * The QR code drawn from the API's module matrix. Always dark on white with a quiet zone, whatever the theme,
  * because scanners need that contrast.
  */
-function QrCode({ matrix, label }: { matrix: boolean[][]; label: string }) {
+export function QrCode({ matrix, label }: { matrix: boolean[][]; label: string }) {
   const size = matrix.length;
   const pad = 4;
   let d = "";
@@ -275,7 +275,7 @@ function QrCode({ matrix, label }: { matrix: boolean[][]; label: string }) {
 }
 
 /** The same secret as text, for setting the app up by hand; shown in groups of 4 and copyable in one tap. */
-function SetupKey({ secret }: { secret: string }) {
+export function SetupKey({ secret }: { secret: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="mt-3">
