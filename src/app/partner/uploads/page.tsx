@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { DocTypeIcon, UploadIcon } from "@/components/icons";
 import { EmptyState, ErrorBanner, PageHeader, RowsSkeleton, StatusBadge, useUrlState } from "@/components/staff-ui";
@@ -46,7 +47,15 @@ function Uploads() {
 
   return (
     <>
-      <PageHeader title="My uploads" description="Results your lab has sent, and whether each one reached the patient's record." />
+      <PageHeader
+        title="My uploads"
+        description="Results your lab has sent, and whether each one reached the patient's record."
+        actions={
+          <Link href="/partner/patients" className="btn">
+            <UploadIcon size={18} aria-hidden="true" /> Upload a result
+          </Link>
+        }
+      />
 
       <div role="group" aria-label="Filter by status" className="mt-6 flex flex-wrap gap-2">
         {STATUSES.map((s) => (
@@ -64,7 +73,7 @@ function Uploads() {
           <RowsSkeleton />
         ) : data.items.length === 0 ? (
           <EmptyState icon={<UploadIcon size={22} />} title={status ? "Nothing with this status" : "No uploads yet"}>
-            {status ? "Choose All to see every upload." : "Results your lab uploads appear here."}
+            {status ? "Choose All to see every upload." : "To send a result, find the patient, then choose Upload result."}
           </EmptyState>
         ) : (
           <>
@@ -88,6 +97,9 @@ function Uploads() {
                 </li>
               ))}
             </ul>
+            {data.counts.FAILED > 0 && (
+              <p className="mt-3 text-sm text-muted">A failed upload didn&apos;t reach the patient. Find the patient and upload the result again.</p>
+            )}
             {data.items.length === 200 && <p className="mt-3 text-sm text-muted">Showing the 200 most recent.</p>}
           </>
         )}

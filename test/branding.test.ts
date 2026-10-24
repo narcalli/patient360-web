@@ -72,12 +72,17 @@ describe("safeHttpsUrl (document links)", () => {
 
 describe("securityHeaders", () => {
   const docs = "https://bucket.s3.ap-south-1.amazonaws.com";
-  const get = (dev: boolean) => Object.fromEntries(securityHeaders({ documentsOrigin: docs, dev }).map((h: { key: string; value: string }) => [h.key, h.value]));
+  const reports = "https://reports.s3.ap-south-1.amazonaws.com";
+  const get = (dev: boolean) =>
+    Object.fromEntries(securityHeaders({ documentsOrigin: docs, reportsOrigin: reports, dev }).map((h: { key: string; value: string }) => [h.key, h.value]));
 
-  it("blocks framing, plugins and foreign scripts, and allows documents only from the bucket", () => {
+  it("blocks framing, plugins and foreign scripts, and allows documents only from the two buckets", () => {
     const h = get(false);
     const csp = h["Content-Security-Policy"];
-    for (const part of ["frame-ancestors 'none'", "object-src 'none'", "base-uri 'self'", `frame-src ${docs}`, "connect-src 'self'", "upgrade-insecure-requests"]) assert.ok(csp.includes(part), part);
+    for (const part of ["frame-ancestors 'none'", "object-src 'none'", "base-uri 'self'", `frame-src ${docs} ${reports}`, "upgrade-insecure-requests"]) assert.ok(csp.includes(part), part);
+    // Uploads may go only to the reports bucket, never to the documents bucket.
+    assert.ok(csp.includes(`connect-src 'self' ${reports};`));
+    assert.ok(!/connect-src[^;]*bucket\.s3/.test(csp));
     assert.ok(!csp.includes("unsafe-eval"));
     assert.equal(h["X-Frame-Options"], "DENY");
     assert.ok(h["Strict-Transport-Security"]);
@@ -89,7 +94,10 @@ describe("securityHeaders", () => {
     assert.equal(get(true)["Strict-Transport-Security"], undefined);
   });
 
-  it("refuses a documents origin that isn't a bare https origin", () => {
-    for (const bad of ["http://bucket.s3.amazonaws.com", "https://bucket.s3.amazonaws.com/path", "not a url"]) assert.throws(() => securityHeaders({ documentsOrigin: bad }));
+  it("refuses a bucket origin that isn't a bare https origin", () => {
+    for (const bad of ["http://bucket.s3.amazonaws.com", "https://bucket.s3.amazonaws.com/path", "not a url"]) {
+      assert.throws(() => securityHeaders({ documentsOrigin: bad, reportsOrigin: reports }));
+      assert.throws(() => securityHeaders({ documentsOrigin: docs, reportsOrigin: bad }));
+    }
   });
 });

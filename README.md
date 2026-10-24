@@ -50,7 +50,7 @@ load, with no build. Logos are uploaded with `scripts/branding.ts` in patient360
 ```bash
 nvm use                 # Node 24
 npm ci
-cp .env.example .env.local   # set DOCUMENTS_ORIGIN (the documents bucket's S3 origin)
+cp .env.example .env.local   # set DOCUMENTS_ORIGIN and REPORTS_ORIGIN (the two buckets' S3 origins)
 # start patient360-api on :3000 first (OTP_SENDER=console prints codes to its log)
 npm run dev             # http://localhost:3001, proxies /api/* to API_ORIGIN
 ```
@@ -69,7 +69,8 @@ or files in `public/`.
 - Document links must be `https://` before they are opened, and are opened with no referrer.
 - `security-headers.mjs` holds the security headers (CSP, no framing, HSTS, …). `next dev` sends them now; the
   CloudFront response headers policy must send the same list at deploy, because a static site can't set headers.
-  The CSP allows scripts only from the portal itself and documents only from `DOCUMENTS_ORIGIN`.
+  The CSP allows scripts only from the portal itself, documents only from `DOCUMENTS_ORIGIN` and `REPORTS_ORIGIN`,
+  and uploads (lab partners' presigned POSTs) only to `REPORTS_ORIGIN`.
 
 ## Build
 

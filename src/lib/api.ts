@@ -36,6 +36,27 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return data as T;
 }
 
+/**
+ * Sends a file straight to S3 with a presigned POST from the API (the API never handles the bytes). XHR rather than
+ * fetch, for upload progress. Resolves true when S3 stored it; false when S3 refused it, the connection dropped or
+ * the signal aborted it.
+ */
+export function postToS3(target: { url: string; fields: Record<string, string> }, file: File, onProgress: (fraction: number) => void, signal: AbortSignal) {
+  return new Promise<boolean>((resolve) => {
+    const form = new FormData();
+    for (const [k, v] of Object.entries(target.fields)) form.append(k, v);
+    // S3 reads the policy fields first: the file must be the last part.
+    form.append("file", file);
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", target.url);
+    xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total);
+    xhr.onload = () => resolve(xhr.status >= 200 && xhr.status < 300);
+    xhr.onerror = xhr.onabort = xhr.ontimeout = () => resolve(false);
+    signal.addEventListener("abort", () => xhr.abort(), { once: true });
+    xhr.send(form);
+  });
+}
+
 export const api = {
   get: <T>(path: string) => request<T>("GET", path),
   post: <T>(path: string, body?: unknown) => request<T>("POST", path, body ?? {}),
@@ -292,6 +313,8 @@ export interface PartnerSearchRow {
   /** Masked: +91XXXXXX1234. */
   mobile: string;
   dob: string;
+  /** Lets this person upload for this patient for a while; only search results carry one. */
+  uploadPass: string;
 }
 
 export interface PartnerUploads {
@@ -307,4 +330,24 @@ export interface PartnerUploads {
     status: DocumentStatus;
   }[];
   counts: Record<DocumentStatus, number>;
+}
+
+/** GET /api/partner/upload-options: what a lab may upload, from hospital_config. */
+export interface UploadOptions {
+  documentTypes: { id: number; label: string; icon: string }[];
+  maxBytes: number;
+  types: { mimeType: string; extensions: string[] }[];
+}
+
+/** POST /api/partner/uploads: the new document's id and where to send the file. */
+export interface UploadTarget {
+  id: number;
+  upload: { url: string; fields: Record<string, string> };
+  expiresInSeconds: number;
+}
+
+/** POST /api/partner/uploads/:id/complete: whether the file reached the patient's record, and why not. */
+export interface UploadResult {
+  status: DocumentStatus;
+  reason?: "NOT_RECEIVED" | "SIZE_MISMATCH" | "TYPE_MISMATCH" | "NOT_THIS_FORMAT";
 }

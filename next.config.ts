@@ -10,7 +10,8 @@ export default function config(phase: string): NextConfig {
   if (phase === PHASE_DEVELOPMENT_SERVER) {
     const api = process.env.API_ORIGIN ?? "http://localhost:3000";
     const documentsOrigin = process.env.DOCUMENTS_ORIGIN;
-    if (!documentsOrigin) throw new Error("Set DOCUMENTS_ORIGIN in .env.local (see .env.example)");
+    const reportsOrigin = process.env.REPORTS_ORIGIN;
+    if (!documentsOrigin || !reportsOrigin) throw new Error("Set DOCUMENTS_ORIGIN and REPORTS_ORIGIN in .env.local (see .env.example)");
     // Extra hosts (e.g. a tunnel such as *.ngrok-free.app) allowed to load the dev server's /_next resources.
     const allowedDevOrigins = (process.env.DEV_ALLOWED_ORIGINS ?? "").split(",").map((h) => h.trim()).filter(Boolean);
     return {
@@ -21,7 +22,7 @@ export default function config(phase: string): NextConfig {
         return [{ source: "/api/:path*", destination: `${api}/api/:path*` }];
       },
       async headers() {
-        return [{ source: "/:path*", headers: securityHeaders({ documentsOrigin, dev: true }) }];
+        return [{ source: "/:path*", headers: securityHeaders({ documentsOrigin, reportsOrigin, dev: true }) }];
       },
     };
   }

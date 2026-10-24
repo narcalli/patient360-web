@@ -19,6 +19,9 @@ export function documentDay(doc: { documentDate: string | null; uploadedAt: stri
 const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+/** Today's calendar day in IST (YYYY-MM-DD), e.g. the default and latest report date. */
+export const todayIst = (now = new Date()) => now.toLocaleDateString("en-CA", { timeZone: IST });
+
 /** "September 2026" for a YYYY-MM-DD day. */
 export function monthLabel(day: string): string {
   const [y, m] = day.split("-");

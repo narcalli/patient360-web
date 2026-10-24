@@ -1,14 +1,16 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { UsersIcon } from "@/components/icons";
+import { UploadIcon, UsersIcon } from "@/components/icons";
+import { ReportUploadDialog } from "@/components/report-upload";
 import { EmptyState, ErrorBanner, PageHeader, RowsSkeleton, SearchBox, useUrlState } from "@/components/staff-ui";
 import { api, type PartnerSearchRow, type SearchResult } from "@/lib/api";
 import { formatDate, initials } from "@/lib/format";
 
 /**
  * US-08: a lab partner finds the patient a result belongs to. Only what is needed to be sure it's the right person
- * is shown (name, patient ID, date of birth, masked mobile), and only for a precise search.
+ * is shown (name, patient ID, date of birth, masked mobile), and only for a precise search. US-10: each match has
+ * Upload result, which opens the upload for that patient.
  */
 export default function PartnerPatientsPage() {
   return (
@@ -25,6 +27,7 @@ function Search() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [uploadFor, setUploadFor] = useState<PartnerSearchRow | null>(null);
 
   useEffect(() => {
     if (!q) return setResult(null);
@@ -43,7 +46,7 @@ function Search() {
 
   return (
     <>
-      <PageHeader title="Find a patient" description="Check you have the right patient before sending their results." />
+      <PageHeader title="Find a patient" description="Find the patient, check it's the right person, then upload their result." />
       <div className="mt-6">
         <SearchBox
           label="Patient"
@@ -97,12 +100,17 @@ function Search() {
                       <dd className="font-semibold tabular">{p.mobile}</dd>
                     </div>
                   </dl>
+                  <button type="button" className="btn w-full sm:w-auto" aria-label={`Upload result for ${p.fullName}`} onClick={() => setUploadFor(p)}>
+                    <UploadIcon size={18} aria-hidden="true" /> Upload result
+                  </button>
                 </li>
               ))}
             </ul>
           </>
         ) : null}
       </section>
+
+      {uploadFor && <ReportUploadDialog patient={uploadFor} onClose={() => setUploadFor(null)} />}
     </>
   );
 }
