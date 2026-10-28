@@ -28,6 +28,14 @@ export function ConfirmDialog({
   const cancelRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
 
+  // Focus goes back to the button that opened this when it closes (a native dialog that is simply removed doesn't).
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    return () => {
+      if (opener?.isConnected) opener.focus();
+    };
+  }, []);
+
   useEffect(() => {
     const d = ref.current;
     if (d && !d.open) d.showModal();

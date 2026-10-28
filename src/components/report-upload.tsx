@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { api, ApiError, postToS3, type PartnerSearchRow, type UploadOptions, type UploadResult, type UploadTarget } from "@/lib/api";
+import { DatePicker } from "@/components/date-picker";
 import { firstName, formatDate, formatSize, initials, todayIst } from "@/lib/format";
 import { AlertIcon, CheckIcon, CloseIcon, FileIcon, ImageIcon, UploadIcon } from "./icons";
 import { ErrorBanner, SelectField, TextField } from "./staff-ui";
@@ -258,11 +259,12 @@ export function ReportUploadDialog({ patient, onClose, onUploaded }: { patient: 
               options={options.documentTypes.map((t) => [String(t.id), t.label])}
               error={errors.type}
             />
-            <TextField
+            <DatePicker
               label="Report date"
-              type="date"
+              required
               value={date}
               max={todayIst()}
+              today={todayIst()}
               onChange={(v) => {
                 setDate(v);
                 setErrors((e) => ({ ...e, date: undefined }));

@@ -63,9 +63,13 @@ export const PlusIcon = (p: P) => (<Svg {...p}><path d="M12 5v14M5 12h14" /></Sv
 export const CopyIcon = (p: P) => (<Svg {...p}><rect x="8.5" y="8.5" width="12" height="12" rx="2" /><path d="M15.5 8.5V5.5a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3" /></Svg>);
 export const KeyIcon = (p: P) => (<Svg {...p}><circle cx="8" cy="15" r="4.5" /><path d="m11.5 11.5 9-9M17 6l3 3M14.5 8.5l2 2" /></Svg>);
 export const DotIcon = (p: P) => (<Svg {...p}><circle cx="12" cy="12" r="2.5" /></Svg>);
+export const TrashIcon = (p: P) => (<Svg {...p}><path d="M4 7h16M10 7V4.5h4V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6" /></Svg>);
+export const UndoIcon = (p: P) => (<Svg {...p}><path d="M9 14 4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></Svg>);
+export const ReplaceIcon = (p: P) => (<Svg {...p}><path d="M4 9h13l-3-3M20 15H7l3 3" /></Svg>);
+export const ActionsIcon = (p: P) => (<Svg {...p}><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z" /></Svg>);
 
 // The sidebar's icon names, as GET /api/session sends them (patient360-api src/lib/navigation.ts NAV_ICONS).
-const NAV_ICONS = { overview: OverviewIcon, records: FileIcon, profile: UserIcon, patients: UsersIcon, lab: FlaskIcon, audit: ShieldIcon, upload: UploadIcon, users: IdCardIcon };
+const NAV_ICONS = { overview: OverviewIcon, records: FileIcon, profile: UserIcon, patients: UsersIcon, lab: FlaskIcon, audit: ShieldIcon, upload: UploadIcon, users: IdCardIcon, actions: ActionsIcon };
 
 /** The icon for a nav item; an unknown name draws a dot, so a new item still shows. */
 export function NavIcon({ name, ...p }: P & { name: string }) {

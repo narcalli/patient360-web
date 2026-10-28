@@ -57,6 +57,25 @@ export function postToS3(target: { url: string; fields: Record<string, string> }
   });
 }
 
+/** Downloads a file the API generates (a template): fetched with the session, saved under the name given. */
+export async function downloadFile(path: string, filename: string) {
+  let res: Response;
+  try {
+    res = await fetch(`/api${path}`, { credentials: "same-origin", cache: "no-store" });
+  } catch {
+    throw new ApiError(0, "NETWORK");
+  }
+  if (!res.ok) throw new ApiError(res.status, ((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? "UNKNOWN");
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export const api = {
   get: <T>(path: string) => request<T>("GET", path),
   post: <T>(path: string, body?: unknown) => request<T>("POST", path, body ?? {}),
@@ -350,4 +369,71 @@ export interface UploadTarget {
 export interface UploadResult {
   status: DocumentStatus;
   reason?: "NOT_RECEIVED" | "SIZE_MISMATCH" | "TYPE_MISMATCH" | "NOT_THIS_FORMAT";
+}
+
+// ─── Imports (mirror patient360-api routes/imports.ts) ───────────────────────
+
+export type ImportStatus = "UPLOADING" | "NEEDS_FIX" | "READY" | "IMPORTING" | "COMPLETED" | "COMPLETED_WITH_ISSUES" | "FAILED";
+
+export interface ImportTypeRow {
+  id: number;
+  code: string;
+  label: string;
+  description: string;
+  columns: { header: string; required: boolean; hint: string; example: string }[];
+}
+
+export interface ImportView {
+  id: number;
+  type: { code: string; label: string };
+  label: string;
+  status: ImportStatus;
+  statusNote: string | null;
+  sheet: { name: string; sizeBytes: number | null; uploadedAt: string | null; revision: number } | null;
+  /** The sheet file is gone; the import's results are kept. */
+  sheetDeleted: boolean;
+  uploadPending: boolean;
+  counts: { total: number; ready: number; errors: number; existing: number; created: number; skipped: number; failed: number };
+  createdBy: string;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  /** What the import allows right now; decided by the API. */
+  can: { run: boolean; replace: boolean; deleteSheet: boolean; delete: boolean; download: boolean };
+}
+
+/** One run of an import (GET /admin/imports/:id/logs). */
+export interface ImportLogView {
+  id: number;
+  runNumber: number;
+  status: "RUNNING" | "COMPLETED" | "COMPLETED_WITH_ISSUES" | "FAILED";
+  note: string | null;
+  startedBy: string;
+  startedAt: string;
+  finishedAt: string | null;
+  counts: { total: number; created: number; skipped: number; failed: number };
+  rollback: {
+    /** AVAILABLE until `until` (24 hours after the run finished), then EXPIRED; DONE once rolled back. */
+    state: "AVAILABLE" | "NOTHING" | "RUNNING" | "EXPIRED" | "DONE";
+    until: string | null;
+    rolledBackAt: string | null;
+    rolledBackBy: string | null;
+    removed: { patients: number; accounts: number; links: number } | null;
+  };
+}
+
+export interface ImportIssue {
+  id: number;
+  phase: "CHECK" | "RUN";
+  severity: "ERROR" | "SKIPPED";
+  rowNumber: number;
+  field: string | null;
+  code: string;
+  message: string;
+}
+
+export interface ImportIssuePage {
+  total: number;
+  pageSize: number;
+  items: ImportIssue[];
 }

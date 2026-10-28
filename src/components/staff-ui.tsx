@@ -247,6 +247,7 @@ export function SelectField({
   hint,
   error,
   optional = false,
+  disabled = false,
 }: {
   label: string;
   value: string;
@@ -257,6 +258,7 @@ export function SelectField({
   hint?: React.ReactNode;
   error?: string | null;
   optional?: boolean;
+  disabled?: boolean;
 }) {
   const id = useId();
   return (
@@ -268,6 +270,7 @@ export function SelectField({
         id={id}
         className={`field mt-1.5 ${error ? "border-bad" : ""}`}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={error ? true : undefined}
         aria-describedby={error || hint ? `${id}-note` : undefined}

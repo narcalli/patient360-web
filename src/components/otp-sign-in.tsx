@@ -167,7 +167,11 @@ export function OtpSignIn<T>({
       {error && <ErrorNote text={error} />}
 
       <button className="btn mt-6 w-full" disabled={busy || digits.length !== 10}>
-        {busy ? "Sending…" : "Send code"}
+        {busy ? "Sending…" : "Send code on WhatsApp"}
+      </button>
+      {/* SMS is not available yet: shown for completeness, never clickable. */}
+      <button type="button" className="btn-secondary mt-3 w-full" disabled title="SMS codes are coming soon">
+        Send code on SMS
       </button>
     </form>
   ) : (

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useId, useState } from "react";
+import { DatePicker } from "@/components/date-picker";
 import { ShieldIcon } from "@/components/icons";
 import { EmptyState, ErrorBanner, PageHeader, RowsSkeleton, useUrlState } from "@/components/staff-ui";
 import { formatDateTime, humanize } from "@/lib/format";
@@ -163,14 +164,8 @@ function FilterBar({
         {label("patientCode", "Patient ID")}
         <input className="field mt-1.5 tabular" autoComplete="off" spellCheck={false} maxLength={20} {...bind("patientCode")} />
       </div>
-      <div>
-        {label("from", "From")}
-        <input type="date" className="field mt-1.5" max={draft.to || undefined} {...bind("from")} />
-      </div>
-      <div>
-        {label("to", "To")}
-        <input type="date" className="field mt-1.5" min={draft.from || undefined} {...bind("to")} />
-      </div>
+      <DatePicker label="From" value={draft.from} max={draft.to || undefined} optional onChange={(v) => setDraft((d) => ({ ...d, from: v }))} />
+      <DatePicker label="To" value={draft.to} min={draft.from || undefined} optional onChange={(v) => setDraft((d) => ({ ...d, to: v }))} />
       <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-5 lg:justify-end">
         {onClear && (
           <button type="button" className="btn-ghost" onClick={onClear}>

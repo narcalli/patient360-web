@@ -7,7 +7,8 @@ import { AlertIcon, CheckIcon, ChevronLeft } from "@/components/icons";
 import { EmailSignIn } from "@/components/patient-staff";
 import { ErrorBanner, PageHeader, RowsSkeleton, SelectField, TemporaryPasswordNotice, TextField, useAreaBase } from "@/components/staff-ui";
 import { api, ApiError, type DuplicateMatch, type PatientCreated, type StaffPatient } from "@/lib/api";
-import { BLOOD_GROUP_OPTIONS, formatDate, formatMobile, GENDER_OPTIONS, RELATION_OPTIONS } from "@/lib/format";
+import { DatePicker } from "@/components/date-picker";
+import { BLOOD_GROUP_OPTIONS, formatDate, formatMobile, GENDER_OPTIONS, RELATION_OPTIONS, todayIst } from "@/lib/format";
 
 type Form = {
   patientCode: string;
@@ -62,8 +63,6 @@ function errorsFrom(e: unknown): Errors {
   }
   return { form: "Couldn't save. Please try again." };
 }
-
-const today = () => new Date().toISOString().slice(0, 10);
 
 /** Register a new patient (mode "new") or change one's details (mode "edit", ?id=). */
 export function PatientFormPage({ mode }: { mode: "new" | "edit" }) {
@@ -124,7 +123,7 @@ function PatientForm({ mode }: { mode: "new" | "edit" }) {
   async function submit(duplicateReason?: string) {
     const local: Errors = {
       ...(form.fullName.trim().length < 2 && { fullName: FIELD_MESSAGES.fullName }),
-      ...((!form.dob || form.dob > today()) && { dob: FIELD_MESSAGES.dob }),
+      ...((!form.dob || form.dob > todayIst()) && { dob: FIELD_MESSAGES.dob }),
       ...(form.mobile.replace(/\D/g, "").length < 10 && { mobile: FIELD_MESSAGES.mobile }),
       ...(form.emergencyContactPhone.trim() && !form.emergencyContactName.trim() && { emergencyContactName: FIELD_MESSAGES.emergencyContactName }),
       ...(mode === "new" && withEmail && !/^\S+@\S+\.\S+$/.test(signInEmail.trim()) && { signInEmail: FIELD_MESSAGES.signInEmail }),
@@ -200,7 +199,9 @@ function PatientForm({ mode }: { mode: "new" | "edit" }) {
             <h2 className="text-base font-bold">Personal details</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">{field("fullName", "Full name", { autoComplete: "off", maxLength: 150, required: true })}</div>
-              {field("dob", "Date of birth", { type: "date", max: today(), required: true })}
+              <div id="field-dob">
+                <DatePicker label="Date of birth" value={form.dob} onChange={set("dob")} max={todayIst()} today={todayIst()} required autoComplete="bday" error={errors.dob} />
+              </div>
               <div id="field-gender">
                 <SelectField label="Gender" value={form.gender} onChange={set("gender")} options={GENDER_OPTIONS} placeholder="Not recorded" optional error={errors.gender} />
               </div>

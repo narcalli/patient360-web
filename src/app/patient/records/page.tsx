@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { DatePicker } from "@/components/date-picker";
 import { DocumentRow, DocumentRowsSkeleton, useDocumentActions } from "@/components/documents";
 import { CloseIcon, FileIcon, SearchIcon } from "@/components/icons";
 import { api, type DocumentType, type PatientDocument } from "@/lib/api";
@@ -120,8 +121,8 @@ function Records() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 lg:flex lg:items-end">
-            <DateInput label="From" value={from} max={to || undefined} onChange={(v) => update({ from: v || null })} />
-            <DateInput label="To" value={to} min={from || undefined} onChange={(v) => update({ to: v || null })} />
+            <DatePicker label="From" size="compact" value={from} max={to || undefined} onChange={(v) => update({ from: v || null })} />
+            <DatePicker label="To" size="compact" value={to} min={from || undefined} onChange={(v) => update({ to: v || null })} />
           </div>
         </div>
 
@@ -200,14 +201,3 @@ function Count({ n }: { n?: number }) {
   return <span className="tabular rounded-full bg-subtle px-1.5 text-xs leading-5 text-muted group-aria-pressed:bg-on-brand/20 group-aria-pressed:text-on-brand">{n}</span>;
 }
 
-function DateInput({ label, value, min, max, onChange }: { label: string; value: string; min?: string; max?: string; onChange: (v: string) => void }) {
-  const id = `date-${label.toLowerCase()}`;
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-semibold">{label}</label>
-      <span className="flex min-h-11 items-center rounded-[var(--radius-control)] border border-field-line bg-surface px-3 focus-within:border-brand">
-        <input id={id} type="date" className="tabular w-full min-w-0 bg-transparent text-sm text-ink outline-none" value={value} min={min} max={max} onChange={(e) => onChange(e.target.value)} />
-      </span>
-    </div>
-  );
-}
