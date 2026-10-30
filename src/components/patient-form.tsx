@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AlertIcon, CheckIcon, ChevronLeft } from "@/components/icons";
 import { EmailSignIn } from "@/components/patient-staff";
 import { ErrorBanner, PageHeader, RowsSkeleton, SelectField, TemporaryPasswordNotice, TextField, useAreaBase } from "@/components/staff-ui";
-import { api, ApiError, type DuplicateMatch, type PatientCreated, type StaffPatient } from "@/lib/api";
+import { api, ApiError, isUuid, type DuplicateMatch, type PatientCreated, type StaffPatient } from "@/lib/api";
 import { DatePicker } from "@/components/date-picker";
 import { BLOOD_GROUP_OPTIONS, formatDate, formatMobile, GENDER_OPTIONS, RELATION_OPTIONS, todayIst } from "@/lib/format";
 
@@ -76,7 +76,7 @@ export function PatientFormPage({ mode }: { mode: "new" | "edit" }) {
 function PatientForm({ mode }: { mode: "new" | "edit" }) {
   const router = useRouter();
   const base = useAreaBase();
-  const id = Number(useSearchParams().get("id"));
+  const id = useSearchParams().get("uuid") ?? "";
   const [form, setForm] = useState<Form>(EMPTY);
   const [loaded, setLoaded] = useState(mode === "new");
   const [loadFailed, setLoadFailed] = useState(false);
@@ -91,7 +91,7 @@ function PatientForm({ mode }: { mode: "new" | "edit" }) {
 
   useEffect(() => {
     if (mode !== "edit") return;
-    if (!Number.isInteger(id) || id <= 0) return setLoadFailed(true);
+    if (!isUuid(id)) return setLoadFailed(true);
     api
       .get<StaffPatient>(`/patients/${id}`)
       .then(({ patient: p }) => {
@@ -149,7 +149,7 @@ function PatientForm({ mode }: { mode: "new" | "edit" }) {
         window.scrollTo({ top: 0 });
       } else {
         await api.put(`/patients/${id}`, body);
-        router.replace(`${base}/patients/view?id=${id}`);
+        router.replace(`${base}/patients/view?uuid=${id}`);
       }
     } catch (e) {
       if (e instanceof ApiError && e.code === "POSSIBLE_DUPLICATE") {
@@ -164,7 +164,7 @@ function PatientForm({ mode }: { mode: "new" | "edit" }) {
 
   if (created) return <Created created={created} base={base} onAnother={() => { setCreated(null); setForm(EMPTY); setWithEmail(false); setSignInEmail(""); setRelation("SELF"); setReason(""); setDuplicates(null); }} />;
 
-  const back = mode === "edit" ? `${base}/patients/view?id=${id}` : `${base}/patients`;
+  const back = mode === "edit" ? `${base}/patients/view?uuid=${id}` : `${base}/patients`;
   const field = (k: keyof Form, label: string, props: Omit<Parameters<typeof TextField>[0], "label" | "value" | "onChange"> = {}) => (
     <div id={`field-${k}`}>
       <TextField label={label} value={form[k]} onChange={set(k)} error={errors[k]} {...props} />
@@ -281,7 +281,7 @@ function PatientForm({ mode }: { mode: "new" | "edit" }) {
                         {d.patientCode} · {formatDate(d.dob)} · {formatMobile(d.mobile)}
                       </span>
                     </span>
-                    <a href={`${base}/patients/view?id=${d.id}`} target="_blank" rel="noopener" className="text-sm font-semibold text-brand hover:underline">
+                    <a href={`${base}/patients/view?uuid=${d.id}`} target="_blank" rel="noopener" className="text-sm font-semibold text-brand hover:underline">
                       Open record (new tab)
                     </a>
                   </li>
@@ -343,7 +343,7 @@ function Created({ created, base, onAnother }: { created: { result: PatientCreat
         <p className="mt-4 text-sm text-muted">That login already has its own password, so no temporary one was made. They can keep using it.</p>
       )}
       <div className="mt-6 flex flex-wrap gap-3">
-        <Link href={`${base}/patients/view?id=${result.id}`} className="btn">Open the record</Link>
+        <Link href={`${base}/patients/view?uuid=${result.id}`} className="btn">Open the record</Link>
         <button type="button" className="btn-secondary" onClick={onAnother}>Register another</button>
       </div>
     </div>

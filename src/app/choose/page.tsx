@@ -12,9 +12,9 @@ import { useMe } from "@/lib/use-me";
 export default function ChoosePatientPage() {
   const router = useRouter();
   const { me } = useMe("/choose");
-  const [busy, setBusy] = useState<number | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  async function choose(patientId: number) {
+  async function choose(patientId: string) {
     setBusy(patientId);
     try {
       await api.put("/me/active-patient", { patientId });

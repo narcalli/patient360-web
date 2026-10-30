@@ -25,12 +25,12 @@ function PatientArea({ session, children }: { session: Session; children: React.
   const { me, reload } = useMe("app");
   const [switching, setSwitching] = useState(false);
   // The patient open before the last switch, for "Not now" on the consent notice.
-  const previousId = useRef<number | null>(null);
+  const previousId = useRef<string | null>(null);
 
   const patient = me?.patients.find((p) => p.id === me.activePatientId);
   if (!me || !patient) return <ShellPlaceholder />;
 
-  async function switchTo(patientId: number) {
+  async function switchTo(patientId: string) {
     if (patientId === me!.activePatientId) return;
     previousId.current = me!.activePatientId;
     setSwitching(true);

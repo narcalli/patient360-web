@@ -21,7 +21,7 @@ export function ConsentGate({
   /** A patient on this login who already has consent, to go back to; none: "Not now" signs out. */
   fallback: LinkedPatient | null;
   onAccepted: () => Promise<unknown>;
-  onNotNow: (patientId: number) => Promise<unknown>;
+  onNotNow: (patientId: string) => Promise<unknown>;
   onSignOut: () => void;
 }) {
   const [consent, setConsent] = useState<ConsentNotice | null>(null);

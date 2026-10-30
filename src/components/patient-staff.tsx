@@ -22,7 +22,7 @@ import {
   useToast,
   useUrlState,
 } from "@/components/staff-ui";
-import { api, ApiError, type LinkCreated, type PatientLogin, type SearchResult, type StaffDocument, type StaffPatient, type StaffSearchRow, type TemporaryPassword } from "@/lib/api";
+import { api, ApiError, isUuid, type LinkCreated, type PatientLogin, type SearchResult, type StaffDocument, type StaffPatient, type StaffSearchRow, type TemporaryPassword } from "@/lib/api";
 import { ageFromDob, bloodGroupLabel, documentDay, formatDate, formatDateTime, formatMobile, formatSize, genderLabel, initials, relationLabel, RELATION_OPTIONS } from "@/lib/format";
 import { can } from "@/lib/session";
 import { useSessionContext } from "@/lib/use-session";
@@ -102,6 +102,10 @@ function Search() {
           <EmptyState icon={<UsersIcon size={22} />} title="Type a little more">
             Use at least 2 letters of the name, 4 digits of the mobile number, or the patient ID.
           </EmptyState>
+        ) : result?.mistypedCode ? (
+          <EmptyState icon={<UsersIcon size={22} />} title="This ID looks mistyped">
+            One of its characters is wrong. Check “{q}” against the form or the patient&apos;s record.
+          </EmptyState>
         ) : result && result.results.length === 0 ? (
           <EmptyState icon={<UsersIcon size={22} />} title={`No patient matches “${q}”`}>
             Check the spelling, or try the mobile number or patient ID instead.
@@ -118,7 +122,7 @@ function Search() {
 }
 
 function Results({ rows, base }: { rows: StaffSearchRow[]; base: string }) {
-  const href = (id: number) => `${base}/patients/view?id=${id}`;
+  const href = (id: string) => `${base}/patients/view?uuid=${id}`;
   return (
     <>
       <p className="mb-3 text-sm text-muted" role="status">
@@ -204,13 +208,13 @@ export function PatientRecordPage() {
 function PatientRecord() {
   const router = useRouter();
   const base = useAreaBase();
-  const id = Number(useSearchParams().get("id"));
+  const id = useSearchParams().get("uuid") ?? "";
   const [data, setData] = useState<StaffPatient | null>(null);
   const [error, setError] = useState<"missing" | "failed" | null>(null);
   const actions = useDocumentActions<StaffDocument>("/documents");
 
   const load = useCallback(() => {
-    if (!Number.isInteger(id) || id <= 0) return setError("missing");
+    if (!isUuid(id)) return setError("missing");
     api
       .get<StaffPatient>(`/patients/${id}`)
       .then(setData)
@@ -276,7 +280,7 @@ function Record({ data, actions, base, onChanged }: { data: StaffPatient; action
           </p>
         </div>
         {can(session, "patients.edit") && (
-          <Link href={`${base}/patients/edit?id=${p.id}`} className="btn-secondary">Edit details</Link>
+          <Link href={`${base}/patients/edit?uuid=${p.id}`} className="btn-secondary">Edit details</Link>
         )}
       </div>
 
@@ -510,7 +514,7 @@ export function EmailSignIn({ checked, onToggle, email, onEmail, error }: { chec
   );
 }
 
-function TemporaryDialog({ patientId, login, onClose, onDone }: { patientId: number; login: PatientLogin; onClose: () => void; onDone: (t: TemporaryPassword) => void }) {
+function TemporaryDialog({ patientId, login, onClose, onDone }: { patientId: string; login: PatientLogin; onClose: () => void; onDone: (t: TemporaryPassword) => void }) {
   const [email, setEmail] = useState(login.email ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

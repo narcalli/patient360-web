@@ -7,7 +7,7 @@ export interface ShellState {
   me: Me;
   patient: LinkedPatient;
   /** Opens another patient linked to this login (US-06). */
-  switchTo: (patientId: number) => Promise<void>;
+  switchTo: (patientId: string) => Promise<void>;
   switching: boolean;
   /** Reloads /me, e.g. after consent changes in Profile. */
   reload: () => Promise<unknown>;

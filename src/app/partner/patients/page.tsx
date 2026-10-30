@@ -71,6 +71,10 @@ function Search() {
           <EmptyState icon={<UsersIcon size={22} />} title="Type a little more">
             Use the whole patient ID, all 10 digits of the mobile number, or at least 3 letters of the name.
           </EmptyState>
+        ) : result?.mistypedCode ? (
+          <EmptyState icon={<UsersIcon size={22} />} title="This ID looks mistyped">
+            One of its characters is wrong. Check “{q}” against the form.
+          </EmptyState>
         ) : result && result.results.length === 0 ? (
           <EmptyState icon={<UsersIcon size={22} />} title={`No patient matches “${q}”`}>
             Check the patient ID or mobile number on the form. If the patient is new to the hospital, ask the hospital to register them.

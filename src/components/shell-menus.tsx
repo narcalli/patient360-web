@@ -25,7 +25,7 @@ function PatientLine({ p, size = "md" }: { p: LinkedPatient; size?: "sm" | "md" 
  * Whose records are open (US-06). One patient: a plain label. Several: a button that lists everyone on this
  * number, with the open one marked.
  */
-export function PatientSwitcher({ me, patient, switching, onSwitch }: { me: Me; patient: LinkedPatient; switching: boolean; onSwitch: (id: number) => void }) {
+export function PatientSwitcher({ me, patient, switching, onSwitch }: { me: Me; patient: LinkedPatient; switching: boolean; onSwitch: (id: string) => void }) {
   const d = useDisclosure();
   if (me.patients.length < 2) {
     return (

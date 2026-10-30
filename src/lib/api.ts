@@ -105,8 +105,12 @@ export interface Hospital {
   supportEmail: string | null;
 }
 
+/** The shape of a patient's uuid, checked before asking the API for it. */
+export const isUuid = (text: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(text);
+
 export interface LinkedPatient {
-  id: number;
+  /** The patient's uuid; patients have no other ID outside the API. */
+  id: string;
   patientCode: string;
   fullName: string;
   relation: string;
@@ -124,13 +128,13 @@ export type ConsentStatus = "GIVEN" | "NOT_GIVEN" | "WITHDRAWN";
 
 export interface Consents {
   noticeVersion: string | null;
-  patients: { patientId: number; status: ConsentStatus; decidedAt: string | null }[];
+  patients: { patientId: string; status: ConsentStatus; decidedAt: string | null }[];
 }
 
 export interface Me {
   mobile: string;
   patients: LinkedPatient[];
-  activePatientId: number | null;
+  activePatientId: string | null;
   consentRequired: boolean;
   theme: "system" | "light" | "dark";
 }
@@ -178,7 +182,7 @@ export type DocumentStatus = "UPLOADING" | "AVAILABLE" | "FAILED";
 export type ActiveStatus = "ACTIVE" | "DEACTIVATED";
 
 export interface StaffSearchRow {
-  id: number;
+  id: string;
   patientCode: string;
   fullName: string;
   dob: string;
@@ -192,6 +196,8 @@ export interface SearchResult<T> {
   results: T[];
   /** The text was too short to search on. */
   tooShort: boolean;
+  /** Nothing found, and the text has the shape of a patient ID with a wrong check character. */
+  mistypedCode: boolean;
 }
 
 export interface StaffDocument {
@@ -223,7 +229,7 @@ export interface PatientLogin {
 }
 
 export interface StaffPatient {
-  patient: Profile & { id: number; isTest: boolean; createdAt: string };
+  patient: Profile & { id: string; isTest: boolean; createdAt: string };
   logins: PatientLogin[];
   documents: StaffDocument[];
 }
@@ -237,7 +243,7 @@ export interface TemporaryPassword {
 
 /** POST /patients and PUT /patients/:id: 409 when the details look like a record that already exists. */
 export interface DuplicateMatch {
-  id: number;
+  id: string;
   patientCode: string;
   fullName: string;
   dob: string;
@@ -245,7 +251,7 @@ export interface DuplicateMatch {
 }
 
 export interface PatientCreated {
-  id: number;
+  id: string;
   patientCode: string;
   login: { accountId: number; mobile: string; joinedExisting: boolean; temporaryPassword: TemporaryPassword | null; keptOwnPassword: boolean };
 }
@@ -312,7 +318,7 @@ export interface AuditItem {
   actorType: string;
   actor: string | null;
   action: string;
-  patient: { id: number; patientCode: string; fullName: string } | null;
+  patient: { id: string; patientCode: string; fullName: string } | null;
   documentId: number | null;
   details: Record<string, unknown> | null;
   ip: string | null;
@@ -326,7 +332,7 @@ export interface AuditPage {
 }
 
 export interface PartnerSearchRow {
-  id: number;
+  id: string;
   patientCode: string;
   fullName: string;
   /** Masked: +91XXXXXX1234. */
