@@ -17,6 +17,7 @@ export const IMPORT_STATUS: Record<ImportStatus, { label: string; tone: Tone }> 
 export const ISSUE_KIND = {
   ERROR: { label: "Fix needed", help: "This row can't be imported until the sheet is fixed." },
   SKIPPED: { label: "Left out", help: "This row was left out on purpose, so nobody is added twice." },
+  WARNING: { label: "Value left out", help: "This row is imported, without the value shown here." },
 } as const;
 
 export const plural = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString("en-IN")} ${n === 1 ? one : many}`;
@@ -66,11 +67,14 @@ export function importError(code: string, message?: unknown): string {
   if (typeof message === "string" && message) return message;
   const known: Record<string, string> = {
     NETWORK: "You seem to be offline. Check your connection and try again.",
+    RULE_NAME_TAKEN: "There is already a rule with this name. Choose another name.",
+    NO_RULE: "This rule no longer exists. Go back to the list of rules.",
     NOT_XLSX: "Only Excel (.xlsx) sheets can be imported.",
     NOT_RECEIVED: "The file didn't arrive. Try uploading it again.",
     NOT_RUNNABLE: "This import can't be run right now.",
     ANOTHER_RUNNING: "Another import of this kind is running. Wait for it to finish.",
     CANNOT_REPLACE: "This import's sheet can't be replaced right now.",
+    CANNOT_CHANGE_RULE: "This import's rule can't be changed right now.",
     CANNOT_DELETE: "This import can't be deleted.",
     NOT_FOUND: "This import no longer exists.",
     STORAGE_ERROR: "The sheet couldn't be deleted just now. Try again.",

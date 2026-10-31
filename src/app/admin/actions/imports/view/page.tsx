@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ImportStatusBadge, ImportUploadDialog } from "@/components/import-ui";
 import { AlertIcon, CheckIcon, ChevronLeft, ClockIcon, DownloadIcon, FileIcon, ReplaceIcon, TrashIcon, UndoIcon, UploadIcon } from "@/components/icons";
-import { EmptyState, ErrorBanner, PageHeader, RowsSkeleton, useToast, useUrlState } from "@/components/staff-ui";
+import { EmptyState, ErrorBanner, FormDialog, PageHeader, RowsSkeleton, SelectField, useToast, useUrlState } from "@/components/staff-ui";
 import { api, ApiError, type ImportIssue, type ImportIssuePage, type ImportLogView, type ImportTypeRow, type ImportView } from "@/lib/api";
 import { formatDateTime, formatSize } from "@/lib/format";
 import { hasRun, importError, ISSUE_KIND, plural, runProgress, timeLeft } from "@/lib/imports";
@@ -20,8 +20,8 @@ export default function ImportViewPage() {
   );
 }
 
-type Dialog = "replace" | "run" | "deleteSheet" | "delete" | null;
-type Severity = "" | "ERROR" | "SKIPPED";
+type Dialog = "replace" | "rule" | "run" | "deleteSheet" | "delete" | null;
+type Severity = "" | "ERROR" | "SKIPPED" | "WARNING";
 const POLL_MS = 2000;
 
 function ImportDetail() {
@@ -61,14 +61,14 @@ function ImportDetail() {
 
   // The run log is read once the import has run, and again whenever a run starts or finishes.
   const ranBefore = view !== null && view.startedAt !== null;
-  const runMark = `${view?.status}-${view?.finishedAt ?? ""}`;
+  const runMark = `${view?.status}-${view?.finishedAt ?? ""}-${view?.working ?? ""}`;
   useEffect(() => {
     if (!ranBefore) return;
     api.get<ImportLogView[]>(`/admin/imports/${id}/logs`).then(setLogs, () => undefined);
   }, [id, ranBefore, runMark]);
 
   // While it runs the page follows it.
-  const importing = view?.status === "IMPORTING";
+  const importing = view?.status === "IMPORTING" || Boolean(view?.working);
   useEffect(() => {
     if (!importing) return;
     const t = setInterval(() => void load(), POLL_MS);
@@ -102,7 +102,7 @@ function ImportDetail() {
       const r = await api.post<{ import: ImportView; log: ImportLogView }>(`/admin/imports/${id}/logs/${log.id}/rollback`);
       setView(r.import);
       setLogs((all) => all?.map((l) => (l.id === r.log.id ? r.log : l)) ?? null);
-      toast.show(`Rolled back: ${plural(r.log.rollback.removed?.patients ?? 0, "patient")} removed.`);
+      toast.show(r.import.working ? "Rolling back. You can leave this page; it carries on." : `Rolled back: ${plural(r.log.rollback.removed?.patients ?? 0, "patient")} removed.`);
     } catch (e) {
       setProblem(e instanceof ApiError ? importError(e.code, e.body.message) : importError("UNKNOWN"));
       void load();
@@ -152,6 +152,7 @@ function ImportDetail() {
       />
 
       {problem && <div className="mt-5"><ErrorBanner text={problem} /></div>}
+      {!view.working && view.workProblem && view.workProblem !== view.statusNote && <div className="mt-5"><ErrorBanner text={view.workProblem} /></div>}
 
       <StatusPanel view={view} onRun={() => setDialog("run")} onUpload={() => setDialog("replace")} />
 
@@ -175,6 +176,8 @@ function ImportDetail() {
         </dl>
       </section>
 
+      <RuleCard view={view} onChange={() => setDialog("rule")} />
+
       <SheetCard
         view={view}
         onReplace={() => setDialog("replace")}
@@ -184,7 +187,7 @@ function ImportDetail() {
 
       {view.startedAt && logs && <RunHistory logs={logs} busy={busy} onRollBack={setRollingBack} />}
 
-      <Problems key={`${view.id}-${view.sheet?.revision ?? 0}-${view.finishedAt ?? ""}`} view={view} />
+      <Problems key={`${view.id}-${view.sheet?.revision ?? 0}-${view.rule?.id ?? 0}-${view.finishedAt ?? ""}`} view={view} />
 
       {view.can.delete && (
         <section aria-labelledby="danger" className="mt-10 rounded-[var(--radius-card)] border border-bad/40 p-5">
@@ -204,7 +207,19 @@ function ImportDetail() {
           onChecked={(next) => {
             setView(next);
             setDialog(null);
-            toast.show(next.status === "READY" ? `Sheet replaced: ${plural(next.counts.ready, "patient")} ready to import.` : "Sheet replaced. It still needs fixing.");
+            toast.show(next.working ? "Sheet uploaded. It is being checked." : next.status === "READY" ? `Sheet replaced: ${plural(next.counts.ready, "patient")} ready to import.` : "Sheet replaced. It still needs fixing.");
+          }}
+        />
+      )}
+      {dialog === "rule" && (
+        <ChangeRuleDialog
+          view={view}
+          rules={types.find((t) => t.code === view.type.code)?.rules ?? []}
+          onClose={() => setDialog(null)}
+          onChanged={(next) => {
+            setView(next);
+            setDialog(null);
+            toast.show(next.working ? "The sheet is being checked with the new rule." : next.sheet && !next.sheetDeleted ? `Rule changed. ${plural(next.counts.ready, "patient")} ready to import.` : "Rule changed.");
           }}
         />
       )}
@@ -286,10 +301,24 @@ function Back() {
 // ─── What state it is in, and the one thing to do next ───────────────────────
 
 function StatusPanel({ view, onRun, onUpload }: { view: ImportView; onRun: () => void; onUpload: () => void }) {
+  if (view.working) {
+    return (
+      <section aria-label="Progress" className="card mt-6 p-5">
+        <div className="flex items-center gap-3">
+          <ClockIcon size={20} className="shrink-0 text-warn motion-safe:animate-pulse" />
+          <div className="min-w-0 flex-1">
+            <p className="font-bold">{view.working === "ROLLBACK" ? "Rolling this run back…" : "Checking every row of the sheet…"}</p>
+            <p className="text-sm text-muted" role="status" aria-live="polite">A big sheet can take a few minutes. You can leave this page; it carries on.</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
   const c = view.counts;
   if (view.status === "IMPORTING") {
     const pct = Math.round(runProgress(c) * 100);
     const done = c.created + c.skipped + c.failed;
+
     return (
       <section aria-label="Progress" className="card mt-6 p-5">
         <div className="flex items-center gap-3">
@@ -372,6 +401,72 @@ function Stat({ label, value, help, tone }: { label: string; value: number; help
       <dd className={`tabular mt-1 text-2xl font-extrabold ${tone === "ok" ? "text-ok" : tone === "bad" ? "text-bad" : ""}`}>{value.toLocaleString("en-IN")}</dd>
       {help && <dd className="mt-1 text-xs text-muted">{help}</dd>}
     </div>
+  );
+}
+
+// ─── The rule ────────────────────────────────────────────────────────────────
+
+const NO_RULE = "No rule: only the standard columns";
+
+function RuleCard({ view, onChange }: { view: ImportView; onChange: () => void }) {
+  return (
+    <section aria-labelledby="rule" className="card mt-6 p-5">
+      <h2 id="rule" className="text-base font-bold">Import rule</h2>
+      <div className="mt-3 flex flex-wrap items-center gap-4">
+        <div className="min-w-0 flex-1 basis-64">
+          {view.rule ? (
+            <Link href={`/admin/actions/import-rules?rule=${view.rule.id}`} className="font-semibold text-brand underline [overflow-wrap:anywhere]">{view.rule.name}</Link>
+          ) : (
+            <p className="font-semibold">{NO_RULE}</p>
+          )}
+          <p className="text-sm text-muted">
+            {view.can.replace ? "Says which columns of the sheet are read. Changing it checks the sheet again." : "The rule this import ran with."}
+          </p>
+        </div>
+        {view.can.replace && (
+          <button type="button" className="btn-secondary" onClick={onChange}>
+            <ReplaceIcon size={18} /> Change rule
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ChangeRuleDialog({ view, rules, onClose, onChanged }: { view: ImportView; rules: ImportTypeRow["rules"]; onClose: () => void; onChanged: (next: ImportView) => void }) {
+  const [choice, setChoice] = useState(view.rule ? String(view.rule.id) : "none");
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  async function save() {
+    setBusy(true);
+    setFailure(null);
+    try {
+      onChanged(await api.put<ImportView>(`/admin/imports/${view.id}/rule`, { ruleId: choice === "none" ? null : Number(choice) }));
+    } catch (e) {
+      setFailure(e instanceof ApiError ? importError(e.code, e.body.message) : importError("UNKNOWN"));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <FormDialog
+      title="Change the import rule"
+      description={view.sheet && !view.sheetDeleted ? "The sheet is checked again with the rule you choose, and the numbers on this page are updated. Nothing is imported." : undefined}
+      submitLabel="Change rule"
+      busyLabel="Starting…"
+      busy={busy}
+      error={failure}
+      onSubmit={() => void save()}
+      onClose={onClose}
+    >
+      <SelectField
+        label="Import rule"
+        value={choice}
+        onChange={setChoice}
+        options={[...rules.map((r): [string, string] => [String(r.id), r.name]), ["none", NO_RULE]]}
+      />
+    </FormDialog>
   );
 }
 
@@ -526,6 +621,7 @@ function Problems({ view }: { view: ImportView }) {
             <button type="button" className="chip" aria-pressed={severity === ""} onClick={() => setSeverity("")}>All</button>
             <button type="button" className="chip" aria-pressed={severity === "ERROR"} onClick={() => setSeverity("ERROR")}>{ISSUE_KIND.ERROR.label}</button>
             <button type="button" className="chip" aria-pressed={severity === "SKIPPED"} onClick={() => setSeverity("SKIPPED")}>{ISSUE_KIND.SKIPPED.label}</button>
+            <button type="button" className="chip" aria-pressed={severity === "WARNING"} onClick={() => setSeverity("WARNING")}>{ISSUE_KIND.WARNING.label}</button>
           </div>
         )}
       </div>

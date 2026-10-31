@@ -8,7 +8,7 @@ import { InfoIcon } from "@/components/icons";
 import { useShell } from "@/components/shell-context";
 import { SignInSettings } from "@/components/sign-in-settings";
 import { api, type Profile } from "@/lib/api";
-import { ageFromDob, bloodGroupLabel, formatDate, formatMobile, genderLabel, initials, relationLabel } from "@/lib/format";
+import { bloodGroupLabel, dobWithAge, formatDate, formatMobile, genderLabel, initials, relationLabel } from "@/lib/format";
 
 type Field = { label: string; value: string | null; href?: string | null };
 
@@ -31,7 +31,7 @@ export default function ProfilePage() {
     ? [
         { label: "Full name", value: p.fullName },
         { label: "Patient ID", value: p.patientCode },
-        { label: "Date of birth", value: `${formatDate(p.dob)} (${ageFromDob(p.dob)})` },
+        { label: "Date of birth", value: dobWithAge(p.dob) },
         { label: "Gender", value: genderLabel(p.gender) },
         { label: "Blood group", value: bloodGroupLabel(p.bloodGroup) },
         { label: "ABHA number", value: p.abhaNumber },

@@ -23,7 +23,7 @@ import {
   useUrlState,
 } from "@/components/staff-ui";
 import { api, ApiError, isUuid, type LinkCreated, type PatientLogin, type SearchResult, type StaffDocument, type StaffPatient, type StaffSearchRow, type TemporaryPassword } from "@/lib/api";
-import { ageFromDob, bloodGroupLabel, documentDay, formatDate, formatDateTime, formatMobile, formatSize, genderLabel, initials, relationLabel, RELATION_OPTIONS } from "@/lib/format";
+import { ageFromDob, bloodGroupLabel, dobWithAge, documentDay, formatDate, formatDob, formatDateTime, formatMobile, formatSize, genderLabel, initials, relationLabel, RELATION_OPTIONS } from "@/lib/format";
 import { can } from "@/lib/session";
 import { useSessionContext } from "@/lib/use-session";
 
@@ -141,7 +141,7 @@ function Results({ rows, base }: { rows: StaffSearchRow[]; base: string }) {
                   {p.isTest && <span className="badge bg-subtle text-muted">Test</span>}
                 </span>
                 <span className="block truncate text-sm text-muted tabular">
-                  {p.patientCode} · {formatDate(p.dob)} · {formatMobile(p.mobile)}
+                  {p.patientCode} · {formatDob(p.dob)} · {formatMobile(p.mobile)}
                 </span>
               </span>
               <ChevronRight size={18} className="shrink-0 text-muted" />
@@ -181,7 +181,7 @@ function Results({ rows, base }: { rows: StaffSearchRow[]; base: string }) {
                   </div>
                 </td>
                 <td className="px-5 py-3 tabular">
-                  {formatDate(p.dob)} <span className="text-muted">({ageFromDob(p.dob)})</span>
+                  {p.dob ? <>{formatDate(p.dob)} <span className="text-muted">({ageFromDob(p.dob)})</span></> : <span className="text-muted">Not recorded</span>}
                 </td>
                 <td className="px-5 py-3">{genderLabel(p.gender) ?? <span className="text-muted">—</span>}</td>
                 <td className="px-5 py-3 tabular">{formatMobile(p.mobile)}</td>
@@ -253,7 +253,7 @@ function Record({ data, actions, base, onChanged }: { data: StaffPatient; action
   const session = useSessionContext();
   const p = data.patient;
   const details: Field[] = [
-    { label: "Date of birth", value: `${formatDate(p.dob)} (${ageFromDob(p.dob)})` },
+    { label: "Date of birth", value: dobWithAge(p.dob) },
     { label: "Gender", value: genderLabel(p.gender) },
     { label: "Blood group", value: bloodGroupLabel(p.bloodGroup) },
     { label: "ABHA number", value: p.abhaNumber },

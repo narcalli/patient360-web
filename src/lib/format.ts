@@ -44,8 +44,15 @@ export function relativeDay(day: string, now = new Date()): string {
   return formatDate(day);
 }
 
+/** A date of birth, which isn't always known. */
+export const formatDob = (dob: string | null) => (dob ? formatDate(dob) : "Not recorded");
+
+/** Date of birth with the age beside it. */
+export const dobWithAge = (dob: string | null) => (dob ? `${formatDate(dob)} (${ageFromDob(dob)})` : "Not recorded");
+
 /** Age in whole years on an IST calendar day, from a YYYY-MM-DD date of birth. */
-export function ageFromDob(dob: string, now = new Date()): string {
+export function ageFromDob(dob: string | null, now = new Date()): string {
+  if (!dob) return "Age not recorded";
   const [ty, tm, td] = now.toLocaleDateString("en-CA", { timeZone: IST }).split("-").map(Number) as [number, number, number];
   const [y, m, d] = dob.split("-").map(Number) as [number, number, number];
   const years = ty - y - (tm < m || (tm === m && td < d) ? 1 : 0);
@@ -85,7 +92,8 @@ export function initials(name: string): string {
     .join("");
 }
 
-export function ageLabel(birthYear: number): string {
+export function ageLabel(birthYear: number | null): string {
+  if (birthYear === null) return "Age not recorded";
   const age = new Date().getFullYear() - birthYear;
   return age <= 0 ? "Under 1 yr" : `${age} yrs`;
 }

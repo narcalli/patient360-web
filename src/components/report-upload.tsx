@@ -334,7 +334,7 @@ function PatientCard({ patient }: { patient: PartnerSearchRow }) {
       <div className="min-w-0">
         <p className="font-semibold [overflow-wrap:anywhere]">{patient.fullName}</p>
         <p className="text-sm text-muted">
-          <span className="tabular">ID {patient.patientCode}</span> · Born <span className="tabular">{formatDate(patient.dob)}</span> ·{" "}
+          <span className="tabular">ID {patient.patientCode}</span> · {patient.dob && <>Born <span className="tabular">{formatDate(patient.dob)}</span> ·{" "}</>}
           <span className="tabular">{patient.mobile}</span>
         </p>
       </div>

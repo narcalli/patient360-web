@@ -122,7 +122,7 @@ export function useSheetUpload() {
   const [step, setStep] = useState<UploadStep>({ kind: "idle" });
   const abort = useRef<AbortController | null>(null);
 
-  async function upload(file: File, to: { existingId: number | null; typeCode: string; label: string }): Promise<UploadOutcome> {
+  async function upload(file: File, to: { existingId: number | null; typeCode: string; label: string; ruleId: number | null }): Promise<UploadOutcome> {
     const ac = new AbortController();
     abort.current = ac;
     let id = to.existingId;
@@ -131,7 +131,7 @@ export function useSheetUpload() {
       const meta = { fileName: file.name, sizeBytes: file.size };
       const target = id
         ? await api.post<UploadTarget>(`/admin/imports/${id}/sheet`, meta)
-        : await api.post<UploadTarget>("/admin/imports", { ...meta, typeCode: to.typeCode, label: to.label.trim() || undefined });
+        : await api.post<UploadTarget>("/admin/imports", { ...meta, typeCode: to.typeCode, label: to.label.trim() || undefined, ruleId: to.ruleId });
       id = target.id;
       const sent = await postToS3(target.upload, file, (f) => setStep({ kind: "sending", progress: f }), ac.signal);
       if (!sent) return { id, view: null, error: ac.signal.aborted ? "The upload was stopped." : "The upload didn't finish. Check your connection and try again." };
@@ -213,6 +213,10 @@ export function ImportUploadDialog({
   const [startedId, setStartedId] = useState<number | null>(replacing?.id ?? null);
   const sheet = useSheetUpload();
   const type = types.find((t) => t.code === typeCode);
+  // The first rule until someone chooses; "none" is a choice too. A started import keeps its rule.
+  const [chosenRule, setChosenRule] = useState<string | null>(null);
+  const ruleId = replacing ? (replacing.rule?.id ?? null) : chosenRule === "none" ? null : chosenRule ? Number(chosenRule) : (type?.rules[0]?.id ?? null);
+  const rule = type?.rules.find((r) => r.id === ruleId);
 
   // Focus goes back to the button that opened this when it closes (a native dialog that is simply removed doesn't).
   useEffect(() => {
@@ -242,7 +246,7 @@ export function ImportUploadDialog({
   async function submit() {
     if (!file || fileError || !type) return;
     setFailure(null);
-    const out = await sheet.upload(file, { existingId: startedId, typeCode: type.code, label });
+    const out = await sheet.upload(file, { existingId: startedId, typeCode: type.code, label, ruleId });
     if (out.id) setStartedId(out.id);
     if (out.view) return onChecked(out.view);
     setFailure(out.error);
@@ -252,7 +256,7 @@ export function ImportUploadDialog({
   async function template() {
     setHelpError(null);
     try {
-      await downloadFile(`/admin/imports/types/${typeCode}/template`, `${typeCode.replace(/_/g, "-")}-template.xlsx`);
+      await downloadFile(ruleId ? `/admin/imports/rules/${ruleId}/template` : `/admin/imports/types/${typeCode}/template`, `${typeCode.replace(/_/g, "-")}-template.xlsx`);
     } catch (e) {
       setHelpError(e instanceof ApiError ? importError(e.code) : importError("UNKNOWN"));
     }
@@ -292,7 +296,10 @@ export function ImportUploadDialog({
             <SelectField
               label="Import type"
               value={typeCode}
-              onChange={setTypeCode}
+              onChange={(code) => {
+                setTypeCode(code);
+                setChosenRule(null);
+              }}
               options={types.map((t): [string, string] => [t.code, t.label])}
               placeholder="Choose what to import"
               hint={startedId ? "This import has started, so its type can't change." : undefined}
@@ -300,6 +307,20 @@ export function ImportUploadDialog({
             />
           </div>
         )}
+
+        {type && !replacing && (
+          <div className="mt-5">
+            <SelectField
+              label="Import rule"
+              value={ruleId ? String(ruleId) : "none"}
+              onChange={setChosenRule}
+              options={[...type.rules.map((r): [string, string] => [String(r.id), r.name]), ["none", "No rule: only the standard columns"]]}
+              hint={startedId ? "This import has started. You can change its rule on the import's page." : "Says which columns of your sheet to read. Choose the one made for this sheet."}
+              disabled={Boolean(startedId) || sheet.busy}
+            />
+          </div>
+        )}
+        {replacing && <p className="mt-5 text-sm text-ink-soft">Rule: <span className="font-semibold">{replacing.rule?.name ?? "No rule, only the standard columns"}</span></p>}
 
         {type && (
           <div className="mt-5 rounded-[var(--radius-control)] bg-subtle p-4">
@@ -321,7 +342,7 @@ export function ImportUploadDialog({
             <details className="mt-3 text-sm">
               <summary className="cursor-pointer font-semibold text-brand">What goes in each column</summary>
               <ul className="mt-2 space-y-1.5">
-                {type.columns.map((c) => (
+                {[...type.columns, ...(rule?.columns ?? [])].map((c) => (
                   <li key={c.header}>
                     <span className="font-semibold">{c.header}</span>{" "}
                     <span className={c.required ? "font-semibold text-bad" : "text-muted"}>{c.required ? "(required)" : "(optional)"}</span>

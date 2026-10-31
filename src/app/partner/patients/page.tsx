@@ -5,7 +5,7 @@ import { UploadIcon, UsersIcon } from "@/components/icons";
 import { ReportUploadDialog } from "@/components/report-upload";
 import { EmptyState, ErrorBanner, PageHeader, RowsSkeleton, SearchBox, useUrlState } from "@/components/staff-ui";
 import { api, type PartnerSearchRow, type SearchResult } from "@/lib/api";
-import { formatDate, initials } from "@/lib/format";
+import { formatDob, initials } from "@/lib/format";
 
 /**
  * US-08: a lab partner finds the patient a result belongs to. Only what is needed to be sure it's the right person
@@ -97,7 +97,7 @@ function Search() {
                   <dl className="flex gap-6 text-sm">
                     <div>
                       <dt className="text-muted">Date of birth</dt>
-                      <dd className="font-semibold tabular">{formatDate(p.dob)}</dd>
+                      <dd className="font-semibold tabular">{formatDob(p.dob)}</dd>
                     </div>
                     <div>
                       <dt className="text-muted">Mobile</dt>

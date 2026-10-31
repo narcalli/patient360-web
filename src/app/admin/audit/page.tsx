@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useId, useState } from "react";
 import { DatePicker } from "@/components/date-picker";
 import { ShieldIcon } from "@/components/icons";
-import { EmptyState, ErrorBanner, PageHeader, RowsSkeleton, useUrlState } from "@/components/staff-ui";
+import { EmptyState, ErrorBanner, PageHeader, RowsSkeleton, SelectField, useUrlState } from "@/components/staff-ui";
 import { formatDateTime, humanize } from "@/lib/format";
 import { api, type AuditItem, type AuditPage } from "@/lib/api";
 
@@ -142,15 +142,7 @@ function FilterBar({
         onApply(Object.fromEntries(Object.entries(draft).map(([k, v]) => [k, v.trim() || null])));
       }}
     >
-      <div>
-        {label("action", "Action")}
-        <select className="field mt-1.5" {...bind("action")}>
-          <option value="">All actions</option>
-          {actions.map((a) => (
-            <option key={a} value={a}>{humanize(a)}</option>
-          ))}
-        </select>
-      </div>
+      <SelectField label="Action" value={draft.action} onChange={(v) => setDraft((d) => ({ ...d, action: v }))} options={actions.map((a) => [a, humanize(a)])} placeholder="All actions" />
       <div>
         {label("actorType", "Who")}
         <select className="field mt-1.5" {...bind("actorType")}>

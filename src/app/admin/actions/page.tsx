@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ActionsIcon, ChevronRight, UploadIcon } from "@/components/icons";
+import { ActionsIcon, ChevronRight, ClipboardIcon, ReplaceIcon, UploadIcon } from "@/components/icons";
 import { EmptyState, PageHeader } from "@/components/staff-ui";
 import { useSessionContext } from "@/lib/use-session";
 import { can } from "@/lib/session";
@@ -16,6 +16,20 @@ const ACTIONS: Action[] = [
     description: "Bring people in from an Excel sheet. Check every row first, replace or delete the sheet, then run it.",
     icon: <UploadIcon size={22} />,
     needs: "imports.manage",
+  },
+  {
+    href: "/admin/actions/import-rules",
+    label: "Import rules",
+    description: "Tell the portal what each column in your Excel sheet means, and which columns a sheet must have.",
+    icon: <ReplaceIcon size={22} />,
+    needs: "imports.manage",
+  },
+  {
+    href: "/admin/actions/patient-fields",
+    label: "Patient fields",
+    description: "Choose what information the hospital keeps about each patient, and who can see it.",
+    icon: <ClipboardIcon size={22} />,
+    needs: "catalog.manage",
   },
 ];
 

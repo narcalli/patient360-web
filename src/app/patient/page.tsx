@@ -174,7 +174,7 @@ function PatientBanner({
   const facts: { label: string; value: string }[] = [
     { label: "Age", value: profile ? ageFromDob(profile.dob) : fallbackAge },
     ...(gender ? [{ label: "Gender", value: gender }] : []),
-    ...(profile ? [{ label: "Date of birth", value: formatDate(profile.dob) }] : []),
+    ...(profile?.dob ? [{ label: "Date of birth", value: formatDate(profile.dob) }] : []),
     { label: "Patient ID", value: patientCode },
   ];
 

@@ -1,10 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { TemporaryPassword } from "@/lib/api";
+import { groupChoices, matchChoices, needsSearch, type Choice } from "@/lib/choices";
 import { formatDateTime, humanize } from "@/lib/format";
-import { AlertIcon, CheckIcon, ClockIcon, CloseIcon, CopyIcon, KeyIcon, SearchIcon } from "./icons";
+import { plural } from "@/lib/imports";
+import { AlertIcon, CheckIcon, ChevronDown, ClockIcon, CloseIcon, CopyIcon, KeyIcon, PlusIcon, ReplaceIcon, SearchIcon } from "./icons";
 
 // Building blocks for the staff pages (admins, hospital staff, lab partners), in the same tokens as the patient view.
 
@@ -237,7 +240,10 @@ export function TextField({
   );
 }
 
-/** A labelled native select (keyboard and screen readers work as everywhere else). */
+/**
+ * A labelled choice. Up to 10 options it is a native select (keyboard and screen readers work as everywhere else);
+ * above that, a button that opens a modal list with a search box, because a long native list is hard to read through.
+ */
 export function SelectField({
   label,
   value,
@@ -248,40 +254,265 @@ export function SelectField({
   error,
   optional = false,
   disabled = false,
+  onRefresh,
+  addLink,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
-  options: [string, string][];
+  /** Value, label, and optionally the heading it is listed under. */
+  options: Choice[];
   /** Shown as the empty choice. */
   placeholder?: string;
   hint?: React.ReactNode;
   error?: string | null;
   optional?: boolean;
   disabled?: boolean;
+  /** Fetches the options again: called when the list is opened, on coming back from another tab, and by its Refresh button. */
+  onRefresh?: () => Promise<unknown>;
+  /** Where to add an option that isn't listed. Opens in a new tab, so nothing typed here is lost. */
+  addLink?: { href: string; label: string };
 }) {
   const id = useId();
+  const [picking, setPicking] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  // A background refresh that fails just leaves the list as it was.
+  const refreshQuietly = useCallback(() => void onRefresh?.().catch(() => {}), [onRefresh]);
+  useEffect(() => {
+    if (!onRefresh) return;
+    window.addEventListener("focus", refreshQuietly);
+    return () => window.removeEventListener("focus", refreshQuietly);
+  }, [onRefresh, refreshQuietly]);
+  const describedBy = error || hint ? `${id}-note` : undefined;
+  const chosen = options.find(([v]) => v === value);
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-semibold">
         {label} {optional && <span className="font-normal text-muted">(optional)</span>}
       </label>
-      <select
-        id={id}
-        className={`field mt-1.5 ${error ? "border-bad" : ""}`}
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error || hint ? `${id}-note` : undefined}
-      >
-        {placeholder !== undefined && <option value="">{placeholder}</option>}
-        {options.map(([v, l]) => (
-          <option key={v} value={v}>{l}</option>
-        ))}
-      </select>
+      {needsSearch(options) ? (
+        <button
+          ref={trigger}
+          id={id}
+          type="button"
+          className={`field mt-1.5 flex items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:text-muted ${error ? "border-bad" : ""}`}
+          disabled={disabled}
+          onClick={() => {
+            refreshQuietly();
+            setPicking(true);
+          }}
+          aria-haspopup="dialog"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+        >
+          <span className={`min-w-0 truncate ${chosen ? "" : "text-placeholder"}`}>{chosen?.[1] ?? placeholder ?? "Choose…"}</span>
+          <ChevronDown size={16} className="shrink-0 text-muted" aria-hidden="true" />
+        </button>
+      ) : (
+        <select
+          id={id}
+          className={`field mt-1.5 ${error ? "border-bad" : ""}`}
+          value={value}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={refreshQuietly}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+        >
+          {placeholder !== undefined && <option value="">{placeholder}</option>}
+          {groupChoices(options).map(({ group, choices }) => {
+            const rows = choices.map(([v, l]) => <option key={v} value={v}>{l}</option>);
+            return group ? <optgroup key={group} label={group}>{rows}</optgroup> : rows;
+          })}
+        </select>
+      )}
       <FieldNote id={`${id}-note`} hint={hint} error={error} />
+      {picking && (
+        <ChoiceDialog
+          title={label}
+          value={value}
+          options={options}
+          placeholder={placeholder}
+          returnFocus={trigger}
+          onRefresh={onRefresh}
+          addLink={addLink}
+          onPick={(v) => {
+            onChange(v);
+            setPicking(false);
+          }}
+          onClose={() => setPicking(false)}
+        />
+      )}
     </div>
+  );
+}
+
+/**
+ * The large modal behind a long SelectField, nearly the whole screen so the options can be read at a glance. Typing
+ * filters it; arrow keys and Enter choose without leaving the search box. It sits on the page body because it can open from inside a form, where Enter would otherwise submit that form.
+ */
+function ChoiceDialog({
+  title,
+  value,
+  options,
+  placeholder,
+  returnFocus,
+  onRefresh,
+  addLink,
+  onPick,
+  onClose,
+}: {
+  title: string;
+  value: string;
+  options: Choice[];
+  placeholder?: string;
+  returnFocus: React.RefObject<HTMLButtonElement | null>;
+  onRefresh?: () => Promise<unknown>;
+  addLink?: { href: string; label: string };
+  onPick: (v: string) => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const titleId = useId();
+  const listId = useId();
+  const [query, setQuery] = useState("");
+  const all = useMemo<Choice[]>(() => (placeholder !== undefined ? [["", placeholder], ...options] : options), [options, placeholder]);
+  const groups = useMemo(() => groupChoices(matchChoices(all, query)), [all, query]);
+  const rows = groups.flatMap((g) => g.choices);
+  const [cursor, setActive] = useState(() => Math.max(0, rows.findIndex(([v]) => v === value)));
+  // The list can get shorter while it is open, when the options are fetched again.
+  const active = Math.max(0, Math.min(cursor, rows.length - 1));
+  const optionId = (i: number) => `${listId}-${i}`;
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshNote, setRefreshNote] = useState<string | null>(null);
+
+  async function refresh() {
+    setRefreshing(true);
+    setRefreshNote(null);
+    try {
+      await onRefresh?.();
+      setRefreshNote("List is up to date.");
+    } catch {
+      setRefreshNote("Couldn't refresh the list. Check your connection.");
+    } finally {
+      setRefreshing(false);
+      searchRef.current?.focus();
+    }
+  }
+
+  useEffect(() => {
+    const d = ref.current;
+    if (d && !d.open) d.showModal();
+    // showModal focuses the first focusable element (Close); start in the search box instead.
+    searchRef.current?.focus();
+    // Back to the button once this has gone; while it is open, everything behind it can't take focus.
+    return () => returnFocus.current?.focus();
+  }, [returnFocus]);
+
+  useEffect(() => {
+    listRef.current?.querySelector(`[id="${optionId(active)}"]`)?.scrollIntoView({ block: "nearest" });
+  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (rows.length) setActive((active + (e.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const row = rows[active];
+      if (row) onPick(row[0]);
+    }
+  }
+
+  let index = -1;
+  return createPortal(
+    <dialog
+      ref={ref}
+      aria-labelledby={titleId}
+      onCancel={(e) => {
+        e.preventDefault();
+        // React passes this up to the dialog this one opened from, and Escape should close only this one.
+        e.stopPropagation();
+        onClose();
+      }}
+      className="m-auto h-[90dvh] max-h-none w-[90vw] max-w-none rounded-[var(--radius-card)] border border-line bg-surface p-0 text-ink shadow-[var(--shadow-pop)] backdrop:bg-overlay/60"
+    >
+      <div className="flex h-full flex-col">
+        <div className="border-b border-line p-4 sm:p-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 id={titleId} className="min-w-0 flex-1 basis-48 text-lg font-bold">{title}</h2>
+            {addLink && (
+              <a href={addLink.href} target="_blank" rel="noopener" className="btn-secondary">
+                <PlusIcon size={18} /> {addLink.label}
+              </a>
+            )}
+            {onRefresh && (
+              <button type="button" className="btn-secondary" disabled={refreshing} onClick={() => void refresh()}>
+                <ReplaceIcon size={18} /> {refreshing ? "Refreshing…" : "Refresh"}
+              </button>
+            )}
+            <button type="button" className="icon-btn" aria-label="Close" onClick={onClose}>
+              <CloseIcon size={16} />
+            </button>
+          </div>
+          <div className="relative mt-4">
+            <SearchIcon size={18} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted" />
+            <input
+              ref={searchRef}
+              type="search"
+              className="field pl-10"
+              role="combobox"
+              aria-label={`Search: ${title}`}
+              aria-expanded="true"
+              aria-controls={listId}
+              aria-activedescendant={rows.length ? optionId(active) : undefined}
+              placeholder="Search"
+              autoComplete="off"
+              spellCheck={false}
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setActive(0);
+              }}
+              onKeyDown={onKeyDown}
+            />
+          </div>
+          <p role="status" className="mt-2 text-sm text-muted">
+            {rows.length === 0 ? <>Nothing matches &ldquo;{query.trim()}&rdquo;.</> : plural(rows.filter(([v]) => v).length, "option")}
+            {refreshNote && ` · ${refreshNote}`}
+          </p>
+        </div>
+        <ul ref={listRef} id={listId} role="listbox" aria-labelledby={titleId} className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
+          {groups.map(({ group, choices }) => (
+            <li key={group ?? ""} role="presentation">
+              {group && <p className="eyebrow mb-2" aria-hidden="true">{group}</p>}
+              <ul role="group" aria-label={group ?? undefined} className="grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-2">
+                {choices.map(([v, l]) => {
+                  const i = ++index;
+                  return (
+                    <li
+                      key={v}
+                      id={optionId(i)}
+                      role="option"
+                      aria-selected={v === value}
+                      className={`flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-[var(--radius-control)] border px-3 py-2 text-sm [overflow-wrap:anywhere] ${v === value ? "border-brand bg-brand-soft font-semibold" : i === active ? "border-line-strong bg-subtle" : "border-line"}`}
+                      onMouseMove={() => setActive(i)}
+                      onClick={() => onPick(v)}
+                    >
+                      <span className="min-w-0">{l}</span>
+                      {v === value && <CheckIcon size={16} className="shrink-0 text-brand" aria-hidden="true" />}
+                    </li>
+                  );
+                })}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </dialog>,
+    document.body,
   );
 }
 
@@ -331,7 +562,7 @@ export function FormDialog({
     const d = ref.current;
     if (d && !d.open) d.showModal();
     // showModal focuses the first focusable element (Close); start at the first field instead.
-    d?.querySelector<HTMLElement>("input, select, textarea")?.focus();
+    d?.querySelector<HTMLElement>('input, select, textarea, [aria-haspopup="dialog"]')?.focus();
   }, []);
   return (
     <dialog

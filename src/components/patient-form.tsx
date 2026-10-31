@@ -8,7 +8,7 @@ import { EmailSignIn } from "@/components/patient-staff";
 import { ErrorBanner, PageHeader, RowsSkeleton, SelectField, TemporaryPasswordNotice, TextField, useAreaBase } from "@/components/staff-ui";
 import { api, ApiError, isUuid, type DuplicateMatch, type PatientCreated, type StaffPatient } from "@/lib/api";
 import { DatePicker } from "@/components/date-picker";
-import { BLOOD_GROUP_OPTIONS, formatDate, formatMobile, GENDER_OPTIONS, RELATION_OPTIONS, todayIst } from "@/lib/format";
+import { BLOOD_GROUP_OPTIONS, formatDob, formatMobile, GENDER_OPTIONS, RELATION_OPTIONS, todayIst } from "@/lib/format";
 
 type Form = {
   patientCode: string;
@@ -35,7 +35,7 @@ const EMPTY: Form = {
 const FIELD_MESSAGES: Record<FieldKey, string> = {
   patientCode: "Use letters, digits and hyphens only, up to 20.",
   fullName: "Enter the full name, at least 2 letters.",
-  dob: "Enter a real date of birth, not in the future.",
+  dob: "Enter a real date of birth, not in the future, or leave it empty.",
   gender: "Choose a gender.",
   bloodGroup: "Choose a blood group.",
   abhaNumber: "An ABHA number has 14 digits.",
@@ -98,7 +98,7 @@ function PatientForm({ mode }: { mode: "new" | "edit" }) {
         setForm({
           patientCode: p.patientCode,
           fullName: p.fullName,
-          dob: p.dob,
+          dob: p.dob ?? "",
           gender: p.gender ?? "",
           bloodGroup: p.bloodGroup ?? "",
           abhaNumber: p.abhaNumber ?? "",
@@ -123,7 +123,7 @@ function PatientForm({ mode }: { mode: "new" | "edit" }) {
   async function submit(duplicateReason?: string) {
     const local: Errors = {
       ...(form.fullName.trim().length < 2 && { fullName: FIELD_MESSAGES.fullName }),
-      ...((!form.dob || form.dob > todayIst()) && { dob: FIELD_MESSAGES.dob }),
+      ...(form.dob > todayIst() && { dob: FIELD_MESSAGES.dob }),
       ...(form.mobile.replace(/\D/g, "").length < 10 && { mobile: FIELD_MESSAGES.mobile }),
       ...(form.emergencyContactPhone.trim() && !form.emergencyContactName.trim() && { emergencyContactName: FIELD_MESSAGES.emergencyContactName }),
       ...(mode === "new" && withEmail && !/^\S+@\S+\.\S+$/.test(signInEmail.trim()) && { signInEmail: FIELD_MESSAGES.signInEmail }),
@@ -200,7 +200,7 @@ function PatientForm({ mode }: { mode: "new" | "edit" }) {
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">{field("fullName", "Full name", { autoComplete: "off", maxLength: 150, required: true })}</div>
               <div id="field-dob">
-                <DatePicker label="Date of birth" value={form.dob} onChange={set("dob")} max={todayIst()} today={todayIst()} required autoComplete="bday" error={errors.dob} />
+                <DatePicker label="Date of birth" value={form.dob} onChange={set("dob")} max={todayIst()} today={todayIst()} autoComplete="bday" error={errors.dob} />
               </div>
               <div id="field-gender">
                 <SelectField label="Gender" value={form.gender} onChange={set("gender")} options={GENDER_OPTIONS} placeholder="Not recorded" optional error={errors.gender} />
@@ -278,7 +278,7 @@ function PatientForm({ mode }: { mode: "new" | "edit" }) {
                     <span className="min-w-0">
                       <span className="block font-semibold">{d.fullName}</span>
                       <span className="block text-sm text-muted tabular">
-                        {d.patientCode} · {formatDate(d.dob)} · {formatMobile(d.mobile)}
+                        {d.patientCode} · {formatDob(d.dob)} · {formatMobile(d.mobile)}
                       </span>
                     </span>
                     <a href={`${base}/patients/view?uuid=${d.id}`} target="_blank" rel="noopener" className="text-sm font-semibold text-brand hover:underline">

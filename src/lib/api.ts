@@ -114,7 +114,7 @@ export interface LinkedPatient {
   patientCode: string;
   fullName: string;
   relation: string;
-  birthYear: number;
+  birthYear: number | null;
   /** False: opening this patient shows the consent notice first. */
   hasConsent: boolean;
 }
@@ -142,7 +142,7 @@ export interface Me {
 export interface Profile {
   patientCode: string;
   fullName: string;
-  dob: string;
+  dob: string | null;
   gender: string | null;
   bloodGroup: string | null;
   abhaNumber: string | null;
@@ -185,7 +185,7 @@ export interface StaffSearchRow {
   id: string;
   patientCode: string;
   fullName: string;
-  dob: string;
+  dob: string | null;
   gender: string | null;
   mobile: string;
   isTest: boolean;
@@ -246,7 +246,7 @@ export interface DuplicateMatch {
   id: string;
   patientCode: string;
   fullName: string;
-  dob: string;
+  dob: string | null;
   mobile: string;
 }
 
@@ -337,7 +337,7 @@ export interface PartnerSearchRow {
   fullName: string;
   /** Masked: +91XXXXXX1234. */
   mobile: string;
-  dob: string;
+  dob: string | null;
   /** Lets this person upload for this patient for a while; only search results carry one. */
   uploadPass: string;
 }
@@ -386,15 +386,112 @@ export interface ImportTypeRow {
   code: string;
   label: string;
   description: string;
-  columns: { header: string; required: boolean; hint: string; example: string }[];
+  columns: ImportColumnHelp[];
+  rules: { id: number; name: string; columns: ImportColumnHelp[] }[];
+}
+
+export interface ImportColumnHelp {
+  header: string;
+  required: boolean;
+  hint: string;
+  example: string;
+}
+
+/** An import rule (GET /admin/imports/rules/:id). */
+export interface ImportRuleColumn {
+  sheetColumn: string;
+  fieldCode: string;
+  fieldLabel: string;
+  required: boolean;
+  aliases: string[];
+}
+
+export interface ImportRuleSummary {
+  id: number;
+  name: string;
+  type: { code: string; label: string };
+  columnCount: number;
+  updatedAt: string;
+}
+
+export interface ImportRuleList {
+  rules: ImportRuleSummary[];
+  types: { code: string; label: string }[];
+}
+
+export interface ImportRuleView {
+  id: number;
+  name: string;
+  type: { code: string; label: string };
+  standardColumns: { header: string; required: boolean; hint: string; identifies: boolean }[];
+  columns: ImportRuleColumn[];
+  availableFields: { code: string; label: string; group: string; helpText: string | null }[];
+}
+
+/** The data catalog (GET /admin/catalog/...). */
+export type CatalogStatus = "ACTIVE" | "DEACTIVATED";
+
+export interface CatalogGroup {
+  code: string;
+  label: string;
+  description: string | null;
+  sortOrder: number;
+  status: CatalogStatus;
+  fieldCount: number;
+}
+
+export interface CatalogDataType {
+  code: string;
+  label: string;
+  inputControl: string;
+  patternHint: string | null;
+}
+
+export interface CatalogField {
+  code: string;
+  label: string;
+  group: { code: string; label: string };
+  dataType: { code: string; label: string; inputControl: string };
+  isRequired: boolean;
+  isMultiValued: boolean;
+  isSensitive: boolean;
+  isPatientVisible: boolean;
+  isComputed: boolean;
+  isCore: boolean;
+  helpText: string | null;
+  maxLength: number | null;
+  decimalPlaces: number | null;
+  minValue: string | null;
+  maxValue: string | null;
+  sortOrder: number;
+  status: CatalogStatus;
+  importColumn: string | null;
+}
+
+export interface CatalogOption {
+  id: number;
+  value: string;
+  label: string;
+  sortOrder: number;
+  status: CatalogStatus;
+}
+
+export interface CatalogFieldDetail extends CatalogField {
+  options: CatalogOption[];
+  patientsWithValue: number;
 }
 
 export interface ImportView {
   id: number;
   type: { code: string; label: string };
+  rule: { id: number; name: string } | null;
   label: string;
   status: ImportStatus;
   statusNote: string | null;
+  /** What the worker is doing apart from a run; nothing else can be done to the import until it ends. */
+  working: "CHECK" | "ROLLBACK" | null;
+  /** What it could not do: a sheet that doesn't fit, a rollback that is blocked. */
+  workProblem: string | null;
   sheet: { name: string; sizeBytes: number | null; uploadedAt: string | null; revision: number } | null;
   /** The sheet file is gone; the import's results are kept. */
   sheetDeleted: boolean;
@@ -431,7 +528,7 @@ export interface ImportLogView {
 export interface ImportIssue {
   id: number;
   phase: "CHECK" | "RUN";
-  severity: "ERROR" | "SKIPPED";
+  severity: "ERROR" | "SKIPPED" | "WARNING";
   rowNumber: number;
   field: string | null;
   code: string;
