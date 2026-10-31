@@ -148,7 +148,7 @@ function ImportDetail() {
             {view.type.label} · started by {view.createdBy}, {formatDateTime(view.createdAt)}
           </>
         }
-        actions={<ImportStatusBadge status={view.status} />}
+        actions={<ImportStatusBadge status={view.status} working={view.working} />}
       />
 
       {problem && <div className="mt-5"><ErrorBanner text={problem} /></div>}
@@ -185,7 +185,7 @@ function ImportDetail() {
         onDelete={() => setDialog("deleteSheet")}
       />
 
-      {view.startedAt && logs && <RunHistory logs={logs} busy={busy} onRollBack={setRollingBack} />}
+      {view.startedAt && logs && <RunHistory logs={logs} busy={busy || Boolean(view.working)} onRollBack={setRollingBack} />}
 
       <Problems key={`${view.id}-${view.sheet?.revision ?? 0}-${view.rule?.id ?? 0}-${view.finishedAt ?? ""}`} view={view} />
 
@@ -420,7 +420,7 @@ function RuleCard({ view, onChange }: { view: ImportView; onChange: () => void }
             <p className="font-semibold">{NO_RULE}</p>
           )}
           <p className="text-sm text-muted">
-            {view.can.replace ? "Says which columns of the sheet are read. Changing it checks the sheet again." : "The rule this import ran with."}
+            {view.can.replace || view.working ? "Says which columns of the sheet are read. Changing it checks the sheet again." : "The rule this import ran with."}
           </p>
         </div>
         {view.can.replace && (

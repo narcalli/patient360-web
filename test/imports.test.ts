@@ -111,3 +111,12 @@ describe("an import whose run was rolled back", () => {
     assert.equal(hasRun({ status: "READY", startedAt: null }), false);
   });
 });
+
+describe("while the worker is busy", () => {
+  it("says what it is doing, not the status underneath", () => {
+    const sheet = { status: "UPLOADING" as ImportStatus, counts: counts(), sheet: null, sheetDeleted: false };
+    assert.equal(summaryLine({ ...sheet, working: "CHECK" }), "Checking every row of the sheet…");
+    assert.equal(summaryLine({ ...sheet, working: "ROLLBACK" }), "Rolling a run back…");
+    assert.equal(summaryLine({ ...sheet, working: null }), "Waiting for the sheet to finish uploading.");
+  });
+});

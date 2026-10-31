@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { api, ApiError, downloadFile, postToS3, type ImportStatus, type ImportTypeRow, type ImportView, type UploadTarget } from "@/lib/api";
 import { formatSize } from "@/lib/format";
-import { importError, IMPORT_STATUS, sheetFileProblem, type Tone } from "@/lib/imports";
+import { WORKING, importError, IMPORT_STATUS, sheetFileProblem, type Tone } from "@/lib/imports";
 import { SelectField } from "./staff-ui";
 import { AlertIcon, CheckIcon, ClockIcon, CloseIcon, DownloadIcon, FileIcon, UploadIcon } from "./icons";
 
@@ -21,12 +21,12 @@ const TONES: Record<Tone, string> = {
 const ICONS: Record<Tone, React.ComponentType<{ size?: number; className?: string }> | null> = { ok: CheckIcon, warn: ClockIcon, bad: AlertIcon, info: CheckIcon, neutral: null };
 
 /** The status in words, with a colour and an icon to support it. */
-export function ImportStatusBadge({ status }: { status: ImportStatus }) {
-  const s = IMPORT_STATUS[status];
+export function ImportStatusBadge({ status, working = null }: { status: ImportStatus; working?: ImportView["working"] }) {
+  const s = working ? WORKING[working] : IMPORT_STATUS[status];
   const Icon = ICONS[s.tone];
   return (
     <span className={`badge ${TONES[s.tone]}`}>
-      {Icon && <Icon size={13} className={status === "IMPORTING" ? "motion-safe:animate-pulse" : undefined} />}
+      {Icon && <Icon size={13} className={status === "IMPORTING" || working ? "motion-safe:animate-pulse" : undefined} />}
       {s.label}
     </span>
   );

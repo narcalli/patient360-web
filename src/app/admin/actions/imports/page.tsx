@@ -60,8 +60,8 @@ function Imports() {
     void load();
   }, [load, attempt]);
 
-  // While something is importing the list keeps itself up to date.
-  const running = items?.some((i) => i.status === "IMPORTING") ?? false;
+  // While something is importing or being checked the list keeps itself up to date.
+  const running = items?.some((i) => i.status === "IMPORTING" || i.working) ?? false;
   useEffect(() => {
     if (!running) return;
     const t = setInterval(() => void load(), POLL_MS);
@@ -130,7 +130,7 @@ function Imports() {
           }}
           onChecked={(view) => {
             setCreating(false);
-            toast.show(view.status === "READY" ? `Sheet checked: ${plural(view.counts.ready, "patient")} ready to import.` : "Sheet uploaded. It needs fixing before it can be imported.");
+            toast.show(view.working ? "Sheet uploaded. It is being checked." : view.status === "READY" ? `Sheet checked: ${plural(view.counts.ready, "patient")} ready to import.` : "Sheet uploaded. It needs fixing before it can be imported.");
             router.push(`/admin/actions/imports/view?id=${view.id}`);
           }}
         />
@@ -150,7 +150,7 @@ function ImportLine({ item }: { item: ImportView }) {
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="font-bold [overflow-wrap:anywhere]">{item.label}</span>
-            <ImportStatusBadge status={item.status} />
+            <ImportStatusBadge status={item.status} working={item.working} />
           </span>
           <span className="mt-0.5 block text-sm text-ink-soft">{item.statusNote && item.status !== "IMPORTING" && !item.sheet ? item.statusNote : summaryLine(item)}</span>
           <span className="mt-0.5 block text-sm text-muted">

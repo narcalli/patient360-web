@@ -14,6 +14,12 @@ export const IMPORT_STATUS: Record<ImportStatus, { label: string; tone: Tone }> 
   FAILED: { label: "Failed", tone: "bad" },
 };
 
+/** What the worker is doing, shown in place of the status while it does. */
+export const WORKING: Record<NonNullable<ImportView["working"]>, { label: string; tone: Tone }> = {
+  CHECK: { label: "Checking", tone: "warn" },
+  ROLLBACK: { label: "Rolling back", tone: "warn" },
+};
+
 export const ISSUE_KIND = {
   ERROR: { label: "Fix needed", help: "This row can't be imported until the sheet is fixed." },
   SKIPPED: { label: "Left out", help: "This row was left out on purpose, so nobody is added twice." },
@@ -44,7 +50,9 @@ export function runProgress(c: ImportView["counts"]): number {
 }
 
 /** One line for the list: what this import holds or did. */
-export function summaryLine(i: Pick<ImportView, "status" | "counts" | "sheet" | "sheetDeleted">): string {
+export function summaryLine(i: Pick<ImportView, "status" | "counts" | "sheet" | "sheetDeleted"> & { working?: ImportView["working"] }): string {
+  if (i.working === "CHECK") return "Checking every row of the sheet…";
+  if (i.working === "ROLLBACK") return "Rolling a run back…";
   const c = i.counts;
   switch (i.status) {
     case "UPLOADING":
