@@ -125,3 +125,14 @@ export function ThemeSwitch({ compact = false, className = "" }: { compact?: boo
     </div>
   );
 }
+
+/** Light, dark or the device's setting. Kept on this device, so it sits with the person's own settings, not in the menu. */
+export function AppearanceCard({ className = "" }: { className?: string }) {
+  return (
+    <section aria-labelledby="appearance-heading" className={`card p-5 sm:p-6 ${className}`}>
+      <h2 id="appearance-heading" className="text-base font-bold">Appearance</h2>
+      <p className="mt-0.5 text-sm text-muted">Light, dark, or the same as your device. This is remembered on this device only.</p>
+      <ThemeSwitch className="mt-4 w-full sm:w-auto sm:min-w-72" />
+    </section>
+  );
+}

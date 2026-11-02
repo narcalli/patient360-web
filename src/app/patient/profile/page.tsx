@@ -7,6 +7,7 @@ import { HelpCard, telHref } from "@/components/help";
 import { InfoIcon } from "@/components/icons";
 import { useShell } from "@/components/shell-context";
 import { SignInSettings } from "@/components/sign-in-settings";
+import { AppearanceCard } from "@/components/theme";
 import { api, type Profile } from "@/lib/api";
 import { bloodGroupLabel, dobWithAge, formatDate, formatMobile, genderLabel, initials, relationLabel } from "@/lib/format";
 
@@ -75,6 +76,7 @@ export default function ProfilePage() {
           <FieldCard heading="Contact" fields={contact} loading={!p} />
           <FieldCard heading="Emergency contact" fields={emergency} loading={!p} />
           <ConsentSection className="lg:col-span-2" />
+          <AppearanceCard className="lg:col-span-2" />
           <SignInSettings className="lg:col-span-2" />
         </div>
       )}

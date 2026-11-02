@@ -66,13 +66,29 @@ export const DotIcon = (p: P) => (<Svg {...p}><circle cx="12" cy="12" r="2.5" />
 export const TrashIcon = (p: P) => (<Svg {...p}><path d="M4 7h16M10 7V4.5h4V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6" /></Svg>);
 export const UndoIcon = (p: P) => (<Svg {...p}><path d="M9 14 4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></Svg>);
 export const ReplaceIcon = (p: P) => (<Svg {...p}><path d="M4 9h13l-3-3M20 15H7l3 3" /></Svg>);
+export const AnalyticsIcon = (p: P) => (<Svg {...p}><path d="M4 20h16" /><rect x="5.5" y="11" width="3.5" height="7" rx="1" /><rect x="10.5" y="6" width="3.5" height="12" rx="1" /><rect x="15.5" y="9" width="3.5" height="9" rx="1" /></Svg>);
 export const ActionsIcon = (p: P) => (<Svg {...p}><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z" /></Svg>);
 
 // The sidebar's icon names, as GET /api/session sends them (patient360-api src/lib/navigation.ts NAV_ICONS).
-const NAV_ICONS = { overview: OverviewIcon, records: FileIcon, profile: UserIcon, patients: UsersIcon, lab: FlaskIcon, audit: ShieldIcon, upload: UploadIcon, users: IdCardIcon, actions: ActionsIcon };
+export const SettingsIcon = (p: P) => (<Svg {...p}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></Svg>);
+// Report group icons, from Lucide (lucide.dev, ISC licence), redrawn here so the portal still ships no icon library.
+export const TargetIcon = (p: P) => (<Svg {...p}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></Svg>);
+export const RupeeIcon = (p: P) => (<Svg {...p}><path d="M6 3h12M6 8h12M6 13l8.5 8M6 13h3" /><path d="M9 13c6.667 0 6.667-10 0-10" /></Svg>);
+export const HeartPulseIcon = (p: P) => (<Svg {...p}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27" /></Svg>);
+export const ShieldCheckIcon = (p: P) => (<Svg {...p}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></Svg>);
+
+const NAV_ICONS = { overview: OverviewIcon, records: FileIcon, profile: UserIcon, patients: UsersIcon, lab: FlaskIcon, audit: ShieldIcon, upload: UploadIcon, users: IdCardIcon, actions: ActionsIcon, analytics: AnalyticsIcon, settings: SettingsIcon };
 
 /** The icon for a nav item; an unknown name draws a dot, so a new item still shows. */
 export function NavIcon({ name, ...p }: P & { name: string }) {
   const Icon = Object.hasOwn(NAV_ICONS, name) ? NAV_ICONS[name as keyof typeof NAV_ICONS] : DotIcon;
+  return <Icon {...p} />;
+}
+
+// A report group's icon, by its code. A group added later draws the analytics icon until it is given one here.
+const DOMAIN_ICONS = { acquisition: TargetIcon, revenue: RupeeIcon, patients: UsersIcon, care: HeartPulseIcon, trust: ShieldCheckIcon };
+
+export function DomainIcon({ code, ...p }: P & { code: string }) {
+  const Icon = Object.hasOwn(DOMAIN_ICONS, code) ? DOMAIN_ICONS[code as keyof typeof DOMAIN_ICONS] : AnalyticsIcon;
   return <Icon {...p} />;
 }

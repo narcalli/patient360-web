@@ -7,12 +7,12 @@ import { activeHref, can, cleanPath, mayOpen, type NavItem } from "../src/lib/se
 
 const item = (href: string): NavItem => ({ key: href, label: href, icon: "overview", href });
 const patient = { nav: [item("/patient"), item("/patient/records"), item("/patient/profile")] };
-const admin = { nav: [item("/admin/patients"), item("/admin/lab-partners"), item("/admin/audit")] };
+const admin = { nav: [item("/admin/patients"), item("/admin/lab-partners"), item("/admin/actions/audit")] };
 
 describe("mayOpen", () => {
   it("opens pages under the session's own nav, with or without a trailing slash", () => {
     assert.equal(mayOpen(admin, "/admin/patients/view"), true);
-    assert.equal(mayOpen(admin, "/admin/audit/"), true);
+    assert.equal(mayOpen(admin, "/admin/actions/audit/"), true);
     assert.equal(mayOpen(patient, "/patient/records"), true);
   });
 
@@ -45,7 +45,7 @@ describe("can", () => {
 
 describe("cleanPath", () => {
   it("drops the static export's trailing slash, but keeps the root", () => {
-    assert.equal(cleanPath("/admin/audit/"), "/admin/audit");
+    assert.equal(cleanPath("/admin/actions/audit/"), "/admin/actions/audit");
     assert.equal(cleanPath("/"), "/");
   });
 });

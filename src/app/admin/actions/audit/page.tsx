@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { Suspense, useEffect, useId, useState } from "react";
 import { DatePicker } from "@/components/date-picker";
-import { ShieldIcon } from "@/components/icons";
+import { ChevronLeft, ShieldIcon } from "@/components/icons";
 import { EmptyState, ErrorBanner, PageHeader, RowsSkeleton, SelectField, useUrlState } from "@/components/staff-ui";
 import { formatDateTime, humanize } from "@/lib/format";
 import { api, type AuditItem, type AuditPage } from "@/lib/api";
@@ -71,6 +72,9 @@ function Audit() {
 
   return (
     <>
+      <Link href="/admin/actions" className="btn-ghost -ml-3 mb-2">
+        <ChevronLeft size={16} /> Admin
+      </Link>
       <PageHeader title="Audit log" description="Every sign-in, view, download and change, newest first. Times are India Standard Time." />
 
       <FilterBar

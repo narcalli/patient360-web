@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { AlertIcon, CloseIcon, FlaskIcon, PlusIcon } from "@/components/icons";
+import { AlertIcon, ChevronLeft, CloseIcon, FlaskIcon, PlusIcon } from "@/components/icons";
 import { EmptyState, ErrorBanner, PageHeader, RowsSkeleton, StatusBadge, useToast } from "@/components/staff-ui";
 import { api, ApiError, type LabPartner, type LabPartnerUser } from "@/lib/api";
 import { formatDate, formatDateTime, formatMobile } from "@/lib/format";
@@ -56,6 +57,9 @@ export default function LabPartnersPage() {
 
   return (
     <>
+      <Link href="/admin/actions" className="btn-ghost -ml-3 mb-2">
+        <ChevronLeft size={16} /> Admin
+      </Link>
       <PageHeader
         title="Lab partners"
         description="Labs that upload results, and the people who sign in for them with their mobile number."

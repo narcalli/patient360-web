@@ -8,9 +8,11 @@ import { Logo } from "./brand";
 import { useDisclosure } from "./disclosure";
 import { HelpCard } from "./help";
 import { ChevronUpDown, CloseIcon, LogoutIcon, NavIcon, SidebarIcon, UserCircleIcon } from "./icons";
-import { ThemeSwitch } from "./theme";
 
 const COLLAPSED_KEY = "p360.sidebar";
+
+/** The nav item for a person's own account page. It opens from the account menu, not from the sidebar list. */
+const ACCOUNT_KEY = "account";
 
 /** The desktop sidebar's collapsed state, kept on this device. */
 export function useSidebarCollapsed() {
@@ -74,7 +76,7 @@ function SidebarBody({ session, pathname, collapsed, onSignOut, onToggle, varian
       {session.role !== "patient" && !collapsed && <p className="eyebrow mt-1 px-5">{session.roleLabel}</p>}
 
       <nav aria-label="Main" className="mt-2 flex flex-col gap-0.5 px-2">
-        {session.nav.map(({ key, href, label, icon }) => {
+        {session.nav.filter((n) => n.key !== ACCOUNT_KEY).map(({ key, href, label, icon }) => {
           const on = href === current;
           return (
             <Link
@@ -97,15 +99,16 @@ function SidebarBody({ session, pathname, collapsed, onSignOut, onToggle, varian
       <div className="mt-auto flex flex-col gap-3 p-2">
         {/* The hospital's help line is for patients; staff have their own channels. */}
         {session.role === "patient" && !collapsed && <HelpCard className="mx-1" />}
-        <AccountButton session={session} collapsed={collapsed} onSignOut={onSignOut} />
+        <AccountButton session={session} collapsed={collapsed} onSignOut={onSignOut} onAccountPage={current === session.nav.find((n) => n.key === ACCOUNT_KEY)?.href} />
       </div>
     </div>
   );
 }
 
-/** Bottom of the sidebar, like a chat app's account row: who is signed in, appearance and sign out in a menu above it. */
-function AccountButton({ session, collapsed, onSignOut }: { session: Session; collapsed: boolean; onSignOut: () => void }) {
+/** Bottom of the sidebar, like a chat app's account row: who is signed in, the account page and sign out in a menu above it. */
+function AccountButton({ session, collapsed, onSignOut, onAccountPage }: { session: Session; collapsed: boolean; onSignOut: () => void; onAccountPage: boolean }) {
   const d = useDisclosure();
+  const account = session.nav.find((n) => n.key === ACCOUNT_KEY);
   const { name, detail, signedInWith } = session.user;
   return (
     <div className="relative">
@@ -137,10 +140,18 @@ function AccountButton({ session, collapsed, onSignOut }: { session: Session; co
           <p className="mt-0.5 font-bold tabular [overflow-wrap:anywhere]">{showLogin(signedInWith)}</p>
           {name && detail && <p className="mt-0.5 text-sm text-muted">{name} · {detail}</p>}
         </div>
-        <div className="border-t border-line px-3 pt-3 pb-3">
-          <p className="mb-2 text-sm font-semibold">Appearance</p>
-          <ThemeSwitch className="w-full" />
-        </div>
+        {account && (
+          <div className="border-t border-line py-2">
+            <Link
+              href={account.href}
+              onClick={() => d.close(false)}
+              aria-current={onAccountPage ? "page" : undefined}
+              className={`flex min-h-11 items-center gap-2.5 rounded-[var(--radius-control)] px-3 text-sm font-semibold transition-colors duration-150 hover:bg-subtle ${onAccountPage ? "bg-subtle" : ""}`}
+            >
+              <NavIcon name={account.icon} className={onAccountPage ? "text-brand" : ""} size={18} /> {account.label}
+            </Link>
+          </div>
+        )}
         <div className="border-t border-line pt-2">
           <button
             type="button"

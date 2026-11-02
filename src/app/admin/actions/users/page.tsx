@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { IdCardIcon, KeyIcon, MailIcon, PhoneIcon, PlusIcon, ShieldIcon } from "@/components/icons";
+import { ChevronLeft, IdCardIcon, KeyIcon, MailIcon, PhoneIcon, PlusIcon, ShieldIcon } from "@/components/icons";
 import {
   EmptyState,
   ErrorBanner,
@@ -94,6 +95,9 @@ function Users() {
 
   return (
     <>
+      <Link href="/admin/actions" className="btn-ghost -ml-3 mb-2">
+        <ChevronLeft size={16} /> Admin
+      </Link>
       <PageHeader
         title="Users"
         description="Everyone who signs in for the hospital and its lab partners. Patients' logins are made when the patient is registered."

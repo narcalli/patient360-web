@@ -45,7 +45,7 @@ function RuleList({ onOpen }: { onOpen: (ruleId: number) => void }) {
   return (
     <>
       <Link href="/admin/actions" className="btn-ghost -ml-3 mb-2">
-        <ChevronLeft size={16} /> Admin Actions
+        <ChevronLeft size={16} /> Admin
       </Link>
       <PageHeader
         title="Import rules"

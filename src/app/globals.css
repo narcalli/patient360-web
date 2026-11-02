@@ -34,6 +34,17 @@
   --color-bad: #B42318;
   --color-bad-soft: #FDECEA;
 
+  /* Report chart series: colour-blind safe (blue, orange, green, magenta, brown, grey, violet) and at least 3:1 on the
+     surface in both themes (test/reports.test.ts). Chart-muted is for Unknown and Other rows. */
+  --color-chart-blue: #0072B2;
+  --color-chart-orange: #C25400;
+  --color-chart-green: #00795A;
+  --color-chart-pink: #B1458A;
+  --color-chart-brown: #8F6200;
+  --color-chart-grey: #5E6A71;
+  --color-chart-violet: #6C4BC2;
+  --color-chart-muted: #7C8A91;
+
   --color-brand: var(--p360-brand, #3B5B6E);
   --color-on-brand: var(--p360-on-brand, #FFFFFF);
   --color-brand-hover: color-mix(in oklab, var(--color-brand) 86%, var(--color-ink));
@@ -92,6 +103,15 @@
     --color-warn-soft: #352B1A;
     --color-bad: #F29A90;
     --color-bad-soft: #3B2422;
+
+    --color-chart-blue: #56B4E9;
+    --color-chart-orange: #F28E4B;
+    --color-chart-green: #4FD1A5;
+    --color-chart-pink: #E49AC8;
+    --color-chart-brown: #E6B84A;
+    --color-chart-grey: #B0AEA5;
+    --color-chart-violet: #B79CF0;
+    --color-chart-muted: #8F8C84;
 
     --color-brand: var(--p360-brand-dark, #8FB8C9);
     --color-on-brand: var(--p360-on-brand-dark, #1F1E1D);
