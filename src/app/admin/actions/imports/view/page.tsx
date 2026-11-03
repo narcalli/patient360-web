@@ -138,6 +138,10 @@ function ImportDetail() {
 
   const ran = hasRun(view);
   const c = view.counts;
+  // Replacing the sheet of an import that has run closes that run for rollback. Said before the sheet goes, and only when a
+  // run is still open (or the log has not loaded yet, so it can't be ruled out).
+  const closesRollback = view.startedAt !== null && (logs === null || logs.some((l) => l.rollback.state === "AVAILABLE"));
+  const replaceWarning = closesRollback ? "This import has already run. Once the sheet is replaced, that run can no longer be rolled back. The patients and bills it added stay. The new sheet is checked first and can then be run as another run." : undefined;
   return (
     <>
       <Back />
@@ -203,6 +207,7 @@ function ImportDetail() {
         <ImportUploadDialog
           types={types.filter((t) => t.code === view.type.code)}
           replacing={view}
+          warning={replaceWarning}
           onClose={() => setDialog(null)}
           onChecked={(next) => {
             setView(next);
@@ -336,7 +341,8 @@ function StatusPanel({ view, onRun, onUpload }: { view: ImportView; onRun: () =>
       </section>
     );
   }
-  if (view.status === "READY") {
+  // Ready with no sheet to run is not offered for import: it goes to the "needs a sheet" panel below.
+  if (view.status === "READY" && view.can.run) {
     return (
       <section aria-label="Next step" className="card mt-6 flex flex-wrap items-center justify-between gap-4 p-5">
         <div className="min-w-0">
@@ -366,16 +372,17 @@ function StatusPanel({ view, onRun, onUpload }: { view: ImportView; onRun: () =>
       </section>
     );
   }
-  if (view.status === "NEEDS_FIX" || view.status === "UPLOADING") {
+  if (view.status === "NEEDS_FIX" || view.status === "UPLOADING" || view.status === "READY") {
+    const hasSheet = view.sheet !== null && !view.sheetDeleted;
     return (
       <section aria-label="Next step" className="card mt-6 flex flex-wrap items-center justify-between gap-4 border-warn/50 p-5">
         <div className="min-w-0">
-          <p className="flex items-center gap-2 font-bold"><AlertIcon size={18} className="text-warn" /> {view.sheet ? "This sheet needs fixing" : "This import needs a sheet"}</p>
+          <p className="flex items-center gap-2 font-bold"><AlertIcon size={18} className="text-warn" /> {hasSheet ? "This sheet needs fixing" : "This import needs a sheet"}</p>
           <p className="mt-1 text-sm text-muted">{view.statusNote ?? "Upload a sheet to continue."}</p>
         </div>
         {view.can.replace && (
           <button type="button" className="btn" onClick={onUpload}>
-            <UploadIcon size={18} /> {view.sheet ? "Replace sheet" : "Upload a sheet"}
+            <UploadIcon size={18} /> {hasSheet ? "Replace sheet" : "Upload a sheet"}
           </button>
         )}
       </section>
@@ -420,10 +427,10 @@ function RuleCard({ view, onChange }: { view: ImportView; onChange: () => void }
             <p className="font-semibold">{NO_RULE}</p>
           )}
           <p className="text-sm text-muted">
-            {view.can.replace || view.working ? "Says which columns of the sheet are read. Changing it checks the sheet again." : "The rule this import ran with."}
+            {view.can.changeRule || view.working ? "Says which columns of the sheet are read. Changing it checks the sheet again." : "The rule this import ran with."}
           </p>
         </div>
-        {view.can.replace && (
+        {view.can.changeRule && (
           <button type="button" className="btn-secondary" onClick={onChange}>
             <ReplaceIcon size={18} /> Change rule
           </button>
@@ -490,9 +497,9 @@ function SheetCard({ view, onReplace, onDownload, onDelete }: { view: ImportView
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {view.can.replace && !view.sheetDeleted && (
+            {view.can.replace && (
               <button type="button" className="btn-secondary" onClick={onReplace}>
-                <ReplaceIcon size={18} /> Replace
+                <ReplaceIcon size={18} /> {view.sheetDeleted ? "Upload a sheet" : "Replace"}
               </button>
             )}
             {view.can.download && (
@@ -508,7 +515,14 @@ function SheetCard({ view, onReplace, onDownload, onDelete }: { view: ImportView
           </div>
         </div>
       ) : (
-        <p className="mt-2 text-sm text-muted">{view.sheetDeleted ? "The sheet was deleted." : "There is no sheet on this import."}</p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
+          <p className="text-sm text-muted">{view.sheetDeleted ? "The sheet was deleted." : "There is no sheet on this import."}</p>
+          {view.can.replace && (
+            <button type="button" className="btn-secondary" onClick={onReplace}>
+              <UploadIcon size={18} /> Upload a sheet
+            </button>
+          )}
+        </div>
       )}
     </section>
   );

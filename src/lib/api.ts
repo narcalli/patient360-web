@@ -502,7 +502,7 @@ export interface ImportView {
   startedAt: string | null;
   finishedAt: string | null;
   /** What the import allows right now; decided by the API. */
-  can: { run: boolean; replace: boolean; deleteSheet: boolean; delete: boolean; download: boolean };
+  can: { run: boolean; replace: boolean; changeRule: boolean; deleteSheet: boolean; delete: boolean; download: boolean };
 }
 
 /** One run of an import (GET /admin/imports/:id/logs). */

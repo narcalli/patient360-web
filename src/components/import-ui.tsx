@@ -191,11 +191,14 @@ const HOW_IT_WORKS = ["Download the template", "Fill it in with Excel", "Upload 
 export function ImportUploadDialog({
   types,
   replacing,
+  warning,
   onClose,
   onChecked,
 }: {
   types: ImportTypeRow[];
   replacing?: ImportView;
+  /** Said before the sheet goes, when replacing it costs something (an earlier run can no longer be rolled back). */
+  warning?: string;
   /** Closed; `changed` is true when an import was made (even one still waiting for a good sheet). */
   onClose: (changed: boolean) => void;
   /** The sheet was uploaded and checked (it may still have problems in its rows). */
@@ -281,15 +284,26 @@ export function ImportUploadDialog({
       >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h2 id={titleId} className="text-lg font-bold">{replacing ? "Replace sheet" : "New import"}</h2>
+            <h2 id={titleId} className="text-lg font-bold">{replacing ? (replacing.can.download ? "Replace sheet" : "Upload a sheet") : "New import"}</h2>
             <p className="mt-1 text-sm text-muted">
-              {replacing ? <>The sheet now in use stays until the new one passes the check. It is then removed.</> : "Upload an Excel sheet. Every row is checked before anything is imported."}
+              {replacing
+                ? replacing.can.download
+                  ? <>The sheet now in use stays until the new one passes the check. It is then removed.</>
+                  : "Upload the sheet. Every row is checked before anything is imported."
+                : "Upload an Excel sheet. Every row is checked before anything is imported."}
             </p>
           </div>
           <button type="button" className="-m-2 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted hover:bg-subtle" aria-label="Close" disabled={sheet.busy} onClick={close}>
             <CloseIcon size={18} />
           </button>
         </div>
+
+        {replacing && warning && (
+          <p role="note" className="mt-4 flex items-start gap-2 rounded-[var(--radius-control)] bg-warn-soft p-3 text-sm text-warn">
+            <AlertIcon size={18} className="mt-0.5 shrink-0" />
+            <span>{warning}</span>
+          </p>
+        )}
 
         {!replacing && (
           <div className="mt-5">
