@@ -189,7 +189,7 @@ export function ReportTable({
   const isShare = (m: ReportMetric) => m.format === "percent" && /share/i.test(m.code);
 
   const header = (key: string, kind: "dim" | "metric", label: string, right: boolean) => (
-    <th scope="col" aria-sort={ariaSort(key)} className={`px-3 py-2.5 font-semibold ${right ? "text-right" : "text-left"}`}>
+    <th key={key} scope="col" aria-sort={ariaSort(key)} className={`px-3 py-2.5 font-semibold ${right ? "text-right" : "text-left"}`}>
       <button type="button" onClick={() => toggle(key, kind)} className={`inline-flex items-center gap-1 rounded-md hover:text-brand ${right ? "flex-row-reverse" : ""}`}>
         {label}
         <span aria-hidden="true" className="text-xs text-muted">
