@@ -92,3 +92,8 @@ export function DomainIcon({ code, ...p }: P & { code: string }) {
   const Icon = Object.hasOwn(DOMAIN_ICONS, code) ? DOMAIN_ICONS[code as keyof typeof DOMAIN_ICONS] : AnalyticsIcon;
   return <Icon {...p} />;
 }
+export const TableIcon = (p: P) => (<Svg {...p}><rect x="3.5" y="4.5" width="17" height="15" rx="2" /><path d="M3.5 10h17M3.5 14.5h17M9.5 10v9.5" /></Svg>);
+export const HBarsIcon = (p: P) => (<Svg {...p}><path d="M4 5v14" /><path d="M4 7h11M4 12h15M4 17h7" /></Svg>);
+export const ColumnChartIcon = (p: P) => (<Svg {...p}><path d="M4 20h16" /><rect x="5.5" y="12" width="3.5" height="8" rx="1" /><rect x="10.5" y="5" width="3.5" height="15" rx="1" /><rect x="15.5" y="9" width="3.5" height="11" rx="1" /></Svg>);
+export const PieChartIcon = (p: P) => (<Svg {...p}><circle cx="12" cy="12" r="8.5" /><path d="M12 3.5V12h8.5" /></Svg>);
+export const LineChartIcon = (p: P) => (<Svg {...p}><path d="M4 4v16h16" /><path d="m7.5 15 4-5 3 3 5-6" /></Svg>);

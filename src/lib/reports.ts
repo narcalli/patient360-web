@@ -78,6 +78,8 @@ export interface RunBody {
   period?: string | { from: string; to: string };
   filters?: { column: string; values: string[] }[];
   breakdown?: string | null;
+  /** Group by another dimension of the report than its row dimension (revenue by visit type, next to revenue by source). */
+  groupBy?: string | null;
 }
 
 // ─── Numbers ─────────────────────────────────────────────────────────────────
@@ -317,6 +319,14 @@ export function runBody(view: ReportView, hasPeriod: boolean): RunBody {
   if (view.breakdown) body.breakdown = view.breakdown;
   return body;
 }
+
+/**
+ * The other axes the report's bars and columns are drawn on: a chart whose x is not the report's row dimension needs the
+ * same numbers grouped by that dimension, which is a run of its own.
+ */
+export const extraAxes = (visuals: { type: string; x: string | null }[], rowDimension: string): string[] => [
+  ...new Set(visuals.filter((v) => (v.type === "BAR" || v.type === "COLUMN") && v.x && v.x !== rowDimension).map((v) => v.x!)),
+];
 
 /** The view without its breakdown: the run that feeds the tiles, bars and columns, which must not be split. */
 export const withoutBreakdown = (view: ReportView): ReportView => ({ ...view, breakdown: "" });

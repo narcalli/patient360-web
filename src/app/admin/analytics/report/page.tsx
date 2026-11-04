@@ -4,13 +4,14 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnalyticsIcon, ChevronLeft, InfoIcon } from "@/components/icons";
-import { BarChart, ColumnChart, KpiCards, ReportTable, StackedChart } from "@/components/report-charts";
+import { ChartPanel, KpiCards, ReportTable, StackedChart } from "@/components/report-charts";
 import { ReportFilterBar, type FilterOptions } from "@/components/report-filters";
 import { EmptyState, ErrorBanner, PageHeader, RowsSkeleton, useAreaBase } from "@/components/staff-ui";
 import { api, ApiError } from "@/lib/api";
 import { formatDateTime, todayIst } from "@/lib/format";
 import {
   EMPTY_VIEW,
+  extraAxes,
   formatDay,
   formatPercent,
   isEmptyResult,
@@ -50,6 +51,10 @@ function Report() {
   const [options, setOptions] = useState<FilterOptions>({});
   const [result, setResult] = useState<ReportResult | null>(null);
   const [split, setSplit] = useState<ReportResult | null>(null);
+  // The same numbers grouped by another dimension, for the charts drawn on another axis (revenue by visit type).
+  const [groups, setGroups] = useState<Record<string, ReportResult>>({});
+  // Those charts load after the main numbers, one at a time (each is another pass over the bills), so a slow one never holds the page up.
+  const [axisState, setAxisState] = useState<Record<string, "loading" | "failed">>({});
   const [failure, setFailure] = useState<Failure>(null);
   const [running, setRunning] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -93,11 +98,30 @@ function Report() {
     const hasPeriod = detail.periods.length > 0;
     const main = api.post<ReportResult>(path, runBody(withoutBreakdown(view), hasPeriod));
     const second = view.breakdown ? api.post<ReportResult>(path, runBody(view, hasPeriod)) : Promise.resolve(null);
+    const axes = extraAxes(detail.visuals, detail.rowDimension.code);
     Promise.all([main, second])
       .then(([a, b]) => {
         if (!live) return;
         setResult(a);
         setSplit(b);
+        setGroups({});
+        setAxisState(Object.fromEntries(axes.map((x) => [x, "loading" as const])));
+        // Charts on another axis: the same period and filters, grouped by that axis, so a picked source narrows them too.
+        void (async () => {
+          for (const x of axes) {
+            try {
+              const g = await api.post<ReportResult>(path, { ...runBody(withoutBreakdown(view), hasPeriod), groupBy: x });
+              if (!live) return;
+              setGroups((all) => ({ ...all, [x]: g }));
+              setAxisState((all) => {
+                const { [x]: _done, ...rest } = all;
+                return rest;
+              });
+            } catch {
+              if (live) setAxisState((all) => ({ ...all, [x]: "failed" }));
+            }
+          }
+        })();
       })
       .catch((e) => live && setFailure(failureOf(e)))
       .finally(() => live && setRunning(false));
@@ -141,6 +165,9 @@ function Report() {
   }
 
   const metricByCode = (c: string | null): ReportMetric | undefined => (c ? result?.metrics.find((m) => m.code === c) : undefined);
+  const dimensionLabelOf = (code: string) => [detail.rowDimension, ...detail.breakdowns].find((d) => d.code === code)?.label ?? code;
+  /** The rows a bar or column chart draws: the report's own, or, on another axis, the run grouped by that axis. */
+  const rowsOf = (v: { x: string | null }) => (v.x && v.x !== detail.rowDimension.code ? (groups[v.x]?.rows ?? []) : (result?.rows ?? []));
   const breakdown = detail.breakdowns.find((b) => b.code === view.breakdown);
   const tableDims = [detail.rowDimension, ...(breakdown && split ? [breakdown] : [])];
   const empty = result ? isEmptyResult(result) : false;
@@ -198,9 +225,11 @@ function Report() {
                   case "KPI":
                     return <KpiCards key={i} metrics={result.metrics} totals={result.totals} />;
                   case "BAR":
-                    return y ? <BarChart key={i} title={v.title} rows={result.rows} dimension={v.x ?? detail.rowDimension.code} metric={y} /> : null;
-                  case "COLUMN":
-                    return y ? <ColumnChart key={i} title={v.title} rows={result.rows} dimension={v.x ?? detail.rowDimension.code} metric={y} /> : null;
+                  case "COLUMN": {
+                    if (!y) return null;
+                    const dimension = v.x ?? detail.rowDimension.code;
+                    return <ChartPanel key={i} title={v.title} rows={rowsOf(v)} dimension={dimension} dimensionLabel={dimensionLabelOf(dimension)} metric={y} initial={v.type === "COLUMN" ? "column" : "bar"} status={axisState[dimension] ?? "ready"} />;
+                  }
                   case "STACKED":
                     if (!y) return null;
                     return split && breakdown ? (

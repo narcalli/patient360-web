@@ -8,6 +8,7 @@ import {
   columnRows,
   customRangeProblem,
   EMPTY_VIEW,
+  extraAxes,
   formatDay,
   formatDimension,
   formatMonth,
@@ -216,5 +217,22 @@ describe("chart colours", () => {
   });
   it("has no two series the same colour", () => {
     for (const block of [light, night]) assert.equal(new Set(names.map((n) => tokens(block, n).toLowerCase())).size, names.length);
+  });
+});
+
+describe("charts on another axis", () => {
+  const visuals = [
+    { type: "KPI", x: null },
+    { type: "BAR", x: "lead_source" },
+    { type: "BAR", x: "visit_type" },
+    { type: "COLUMN", x: "visit_type" },
+    { type: "STACKED", x: "month" },
+    { type: "BAR", x: null },
+    { type: "TABLE", x: "branch" },
+  ];
+  it("asks for one extra run per axis other than the row dimension, bars and columns only", () => {
+    assert.deepEqual(extraAxes(visuals, "lead_source"), ["visit_type"]);
+    assert.deepEqual(extraAxes(visuals, "visit_type"), ["lead_source"]);
+    assert.deepEqual(extraAxes([{ type: "BAR", x: "lead_source" }], "lead_source"), []);
   });
 });

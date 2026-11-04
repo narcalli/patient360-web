@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
+import { ColumnChartIcon, HBarsIcon, LineChartIcon, PieChartIcon, TableIcon } from "@/components/icons";
 import {
   barRows,
   columnRows,
@@ -54,56 +55,242 @@ export function KpiCards({ metrics, totals }: { metrics: ReportMetric[]; totals:
   );
 }
 
-/** Sorted horizontal bars: the top ten named rows, then Unknown and Not matched rows in a muted colour, always shown. */
+/** The bars of a bar view: the top ten named rows, then Unknown, Not matched and Other in a muted colour. */
+function BarsBody({ bars, metric }: { bars: Bar[]; metric: ReportMetric }) {
+  const max = Math.max(0, ...bars.map((b) => b.value));
+  if (bars.length === 0) return <p className="text-sm text-muted">Nothing to chart.</p>;
+  return (
+    <ul className="space-y-2.5">
+      {bars.map((b) => (
+        <li key={b.label} className={`grid grid-cols-[minmax(5.5rem,9rem)_1fr_auto] items-center gap-3 text-sm ${b.muted ? "text-muted" : ""}`}>
+          <span className="truncate" title={b.label}>
+            {formatDimension(b.label)}
+          </span>
+          <span className="h-3 overflow-hidden rounded-full bg-subtle" aria-hidden="true">
+            <span className={`block h-full rounded-full ${b.muted ? MUTED_FILL : SERIES_FILL[0]}`} style={{ width: `${pct(b.value, max)}%` }} />
+          </span>
+          <span className="tabular min-w-16 text-right font-semibold">{formatValue(metric.format, b.value, true)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The columns of a column view, in the order the report gives (spend bands low to high). */
+function ColumnsBody({ bars, metric }: { bars: Bar[]; metric: ReportMetric }) {
+  const max = Math.max(0, ...bars.map((b) => b.value));
+  if (bars.length === 0) return <p className="text-sm text-muted">Nothing to chart.</p>;
+  return (
+    <ul className="flex gap-2 overflow-x-auto pb-1 sm:gap-3">
+      {bars.map((b) => (
+        <li key={b.label} className="flex min-w-14 flex-1 flex-col items-center text-center">
+          <span className={`tabular text-xs font-semibold ${b.muted ? "text-muted" : ""}`}>{formatValue(metric.format, b.value, true)}</span>
+          <span className="mt-1 flex h-40 w-full items-end justify-center" aria-hidden="true">
+            <span className={`block w-full max-w-14 rounded-t-md ${b.muted ? MUTED_FILL : SERIES_FILL[0]}`} style={{ height: `${pct(b.value, max)}%`, minHeight: b.value > 0 ? 2 : 0 }} />
+          </span>
+          <span className={`mt-1.5 w-full truncate text-xs ${b.muted ? "text-muted" : "text-ink-soft"}`} title={b.label}>
+            {formatDimension(b.label)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// SVG fills and strokes are theme tokens too, written out whole so the stylesheet picks them up.
+const SERIES_SVG = ["fill-chart-blue", "fill-chart-orange", "fill-chart-green", "fill-chart-pink", "fill-chart-brown", "fill-chart-grey", "fill-chart-violet"] as const;
+const SERIES_DOT = SERIES_FILL;
+
+/** A slice of a pie from angle a0 to a1 (radians, clockwise from the top). */
+const slicePath = (cx: number, cy: number, r: number, a0: number, a1: number) => {
+  const p = (a: number) => `${(cx + r * Math.cos(a - Math.PI / 2)).toFixed(2)} ${(cy + r * Math.sin(a - Math.PI / 2)).toFixed(2)}`;
+  return `M${cx} ${cy} L${p(a0)} A${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${p(a1)} Z`;
+};
+
+/** Each row's share of the whole, as a pie with a legend that says every figure in text. Only rows above zero can be a slice. */
+function PieBody({ bars, metric }: { bars: Bar[]; metric: ReportMetric }) {
+  const parts = bars.filter((b) => b.value > 0);
+  const total = parts.reduce((t, b) => t + b.value, 0);
+  if (parts.length === 0 || total <= 0) return <p className="text-sm text-muted">Nothing to chart as shares.</p>;
+  let from = 0;
+  const slices = parts.map((b, i) => {
+    const span = (b.value / total) * Math.PI * 2;
+    const slice = { b, i, a0: from, a1: from + span };
+    from += span;
+    return slice;
+  });
+  const fillOf = (b: Bar, i: number) => (b.muted ? "fill-chart-muted" : SERIES_SVG[i % SERIES_SVG.length]);
+  const dotOf = (b: Bar, i: number) => (b.muted ? MUTED_FILL : SERIES_DOT[i % SERIES_DOT.length]);
+  return (
+    <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:justify-center">
+      <svg viewBox="0 0 200 200" className="size-48 shrink-0" role="img" aria-label={`Share of ${metric.label} by group`}>
+        {slices.length === 1 ? (
+          <circle cx="100" cy="100" r="92" className={fillOf(slices[0]!.b, 0)} />
+        ) : (
+          slices.map((s) => <path key={s.b.label} d={slicePath(100, 100, 92, s.a0, s.a1)} className={`${fillOf(s.b, s.i)} stroke-surface`} strokeWidth="1.5" />)
+        )}
+      </svg>
+      <ul className="w-full max-w-md space-y-1.5 text-sm">
+        {slices.map(({ b, i }) => (
+          <li key={b.label} className={`grid grid-cols-[auto_1fr_auto_3.5rem] items-center gap-2 ${b.muted ? "text-muted" : ""}`}>
+            <span className={`size-3 rounded-sm ${dotOf(b, i)}`} aria-hidden="true" />
+            <span className="truncate" title={b.label}>
+              {formatDimension(b.label)}
+            </span>
+            <span className="tabular text-right font-semibold">{formatValue(metric.format, b.value, true)}</span>
+            <span className="tabular text-right text-muted">{((b.value / total) * 100).toFixed(1)}%</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** The rows in report order joined by a line, each point labelled. Most useful when the rows follow time or an order. */
+function LineBody({ bars, metric }: { bars: Bar[]; metric: ReportMetric }) {
+  if (bars.length === 0) return <p className="text-sm text-muted">Nothing to chart.</p>;
+  const W = 640;
+  const H = 230;
+  const pad = { l: 12, r: 12, t: 26, b: 34 };
+  const max = Math.max(0, ...bars.map((b) => b.value));
+  const x = (i: number) => (bars.length === 1 ? W / 2 : pad.l + (i * (W - pad.l - pad.r)) / (bars.length - 1));
+  const y = (v: number) => pad.t + (1 - (max > 0 ? Math.max(0, v) / max : 0)) * (H - pad.t - pad.b);
+  const points = bars.map((b, i) => `${x(i).toFixed(1)},${y(b.value).toFixed(1)}`).join(" ");
+  const showValues = bars.length <= 14;
+  const every = Math.max(1, Math.ceil(bars.length / 8));
+  return (
+    <div className="overflow-x-auto">
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-56 w-full min-w-[30rem]" role="img" aria-label={`${metric.label} across ${bars.length} groups`}>
+        <line x1={pad.l} x2={W - pad.r} y1={H - pad.b} y2={H - pad.b} className="stroke-line" strokeWidth="1" />
+        {bars.length > 1 && <polyline points={points} fill="none" className="stroke-chart-blue" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
+        {bars.map((b, i) => (
+          <g key={b.label}>
+            <circle cx={x(i)} cy={y(b.value)} r="4" className={b.muted ? "fill-chart-muted" : "fill-chart-blue"}>
+              <title>{`${b.label}: ${formatValue(metric.format, b.value)}`}</title>
+            </circle>
+            {showValues && (
+              <text x={x(i)} y={y(b.value) - 10} textAnchor="middle" className="fill-ink text-[11px] font-semibold">
+                {formatValue(metric.format, b.value, true)}
+              </text>
+            )}
+            {i % every === 0 && (
+              <text x={x(i)} y={H - 12} textAnchor="middle" className="fill-muted text-[11px]">
+                {formatDimension(b.label).slice(0, 14)}
+              </text>
+            )}
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+/** Every row, largest first, with its share: the same numbers as the charts, as text. */
+function ValuesTable({ rows, dimension, dimensionLabel, metric }: { rows: ReportRow[]; dimension: string; dimensionLabel: string; metric: ReportMetric }) {
+  const list = rows
+    .map((r) => ({ label: r.dims[dimension] ?? "", value: r.values[metric.code] }))
+    .filter((r): r is { label: string; value: number } => r.value !== null && r.value !== undefined && r.label !== "")
+    .sort((a, b) => b.value - a.value);
+  const total = list.reduce((t, r) => t + Math.max(0, r.value), 0);
+  if (list.length === 0) return <p className="text-sm text-muted">Nothing to show.</p>;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[20rem] text-left text-sm">
+        <caption className="sr-only">{`${metric.label} by ${dimensionLabel}`}</caption>
+        <thead className="border-b border-line text-muted">
+          <tr>
+            <th scope="col" className="py-2 pr-3 font-semibold">{dimensionLabel}</th>
+            <th scope="col" className="px-3 py-2 text-right font-semibold">{metric.label}</th>
+            <th scope="col" className="py-2 pl-3 text-right font-semibold">Share</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {list.map((r) => (
+            <tr key={r.label} className={isMutedLabel(r.label) ? "text-muted" : ""}>
+              <th scope="row" className="py-2 pr-3 font-normal">{formatDimension(r.label)}</th>
+              <td className="tabular px-3 py-2 text-right font-semibold" title={formatValue(metric.format, r.value)}>{formatValue(metric.format, r.value, true)}</td>
+              <td className="tabular py-2 pl-3 text-right text-muted">{total > 0 && r.value > 0 ? `${((r.value / total) * 100).toFixed(1)}%` : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export type ChartView = "table" | "bar" | "column" | "pie" | "line";
+
+const VIEWS: { id: ChartView; label: string; Icon: typeof TableIcon }[] = [
+  { id: "table", label: "Table", Icon: TableIcon },
+  { id: "bar", label: "Bar chart", Icon: HBarsIcon },
+  { id: "column", label: "Column chart", Icon: ColumnChartIcon },
+  { id: "pie", label: "Pie chart", Icon: PieChartIcon },
+  { id: "line", label: "Line chart", Icon: LineChartIcon },
+];
+
+/**
+ * One measure over one dimension, shown the way the person picks: a table, bars, columns, a pie or a line. The report says
+ * which view it opens on; the buttons above the chart switch it without asking the server for anything.
+ */
+export function ChartPanel({ title, rows, dimension, dimensionLabel, metric, initial, status = "ready" }: { title: string; rows: ReportRow[]; dimension: string; dimensionLabel: string; metric: ReportMetric; initial: "bar" | "column"; status?: "ready" | "loading" | "failed" }) {
+  const [view, setView] = useState<ChartView>(initial);
+  const id = useId();
+  const bars = useMemo(() => barRows(rows, dimension, metric.code), [rows, dimension, metric.code]);
+  const inOrder = useMemo(() => columnRows(rows, dimension, metric.code), [rows, dimension, metric.code]);
+  return (
+    <section aria-labelledby={id} className="card p-4 sm:p-5">
+      <h2 id={id} className="text-base font-bold">
+        {title}
+      </h2>
+      <p className="mt-0.5 text-sm text-muted">{metric.label}</p>
+      <div role="group" aria-label="Show this as" className="mt-3 inline-flex gap-1 rounded-lg bg-subtle p-1">
+        {VIEWS.map(({ id: v, label, Icon }) => (
+          <button
+            key={v}
+            type="button"
+            aria-pressed={view === v}
+            aria-label={label}
+            title={label}
+            onClick={() => setView(v)}
+            className="inline-flex size-9 items-center justify-center rounded-md text-muted transition-colors hover:text-ink aria-pressed:bg-surface aria-pressed:text-ink aria-pressed:shadow-[var(--shadow-card)]"
+          >
+            <Icon size={18} />
+          </button>
+        ))}
+      </div>
+      <div className="mt-4">
+        {status === "loading" && (
+          <p className="text-sm text-muted" role="status" aria-live="polite">
+            Loading this chart…
+          </p>
+        )}
+        {status === "failed" && <p className="text-sm text-bad">This chart couldn’t be loaded. Apply again to retry.</p>}
+        {status === "ready" && view === "table" && <ValuesTable rows={rows} dimension={dimension} dimensionLabel={dimensionLabel} metric={metric} />}
+        {status === "ready" && view === "bar" && <BarsBody bars={bars} metric={metric} />}
+        {status === "ready" && view === "column" && <ColumnsBody bars={inOrder} metric={metric} />}
+        {status === "ready" && view === "pie" && <PieBody bars={bars} metric={metric} />}
+        {status === "ready" && view === "line" && <LineBody bars={inOrder} metric={metric} />}
+      </div>
+    </section>
+  );
+}
+
+/** Sorted horizontal bars alone (no switcher). */
 export function BarChart({ title, rows, dimension, metric }: { title: string; rows: ReportRow[]; dimension: string; metric: ReportMetric }) {
   const bars = useMemo(() => barRows(rows, dimension, metric.code), [rows, dimension, metric.code]);
-  const max = Math.max(0, ...bars.map((b) => b.value));
   return (
     <ChartCard title={title} note={metric.label}>
-      {bars.length === 0 ? (
-        <p className="text-sm text-muted">Nothing to chart.</p>
-      ) : (
-        <ul className="space-y-2.5">
-          {bars.map((b) => (
-            <li key={b.label} className={`grid grid-cols-[minmax(5.5rem,9rem)_1fr_auto] items-center gap-3 text-sm ${b.muted ? "text-muted" : ""}`}>
-              <span className="truncate" title={b.label}>
-                {formatDimension(b.label)}
-              </span>
-              <span className="h-3 overflow-hidden rounded-full bg-subtle" aria-hidden="true">
-                <span className={`block h-full rounded-full ${b.muted ? MUTED_FILL : SERIES_FILL[0]}`} style={{ width: `${pct(b.value, max)}%` }} />
-              </span>
-              <span className="tabular min-w-16 text-right font-semibold">{formatValue(metric.format, b.value, true)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <BarsBody bars={bars} metric={metric} />
     </ChartCard>
   );
 }
 
-/** Columns in the order the report gives (spend bands low to high). */
+/** Columns alone (no switcher). */
 export function ColumnChart({ title, rows, dimension, metric }: { title: string; rows: ReportRow[]; dimension: string; metric: ReportMetric }) {
   const bars: Bar[] = useMemo(() => columnRows(rows, dimension, metric.code), [rows, dimension, metric.code]);
-  const max = Math.max(0, ...bars.map((b) => b.value));
   return (
     <ChartCard title={title} note={metric.label}>
-      {bars.length === 0 ? (
-        <p className="text-sm text-muted">Nothing to chart.</p>
-      ) : (
-        <ul className="flex gap-2 overflow-x-auto pb-1 sm:gap-3">
-          {bars.map((b) => (
-            <li key={b.label} className="flex min-w-14 flex-1 flex-col items-center text-center">
-              <span className={`tabular text-xs font-semibold ${b.muted ? "text-muted" : ""}`}>{formatValue(metric.format, b.value, true)}</span>
-              <span className="mt-1 flex h-40 w-full items-end justify-center" aria-hidden="true">
-                <span className={`block w-full max-w-14 rounded-t-md ${b.muted ? MUTED_FILL : SERIES_FILL[0]}`} style={{ height: `${pct(b.value, max)}%`, minHeight: b.value > 0 ? 2 : 0 }} />
-              </span>
-              <span className={`mt-1.5 w-full truncate text-xs ${b.muted ? "text-muted" : "text-ink-soft"}`} title={b.label}>
-                {formatDimension(b.label)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <ColumnsBody bars={bars} metric={metric} />
     </ChartCard>
   );
 }
