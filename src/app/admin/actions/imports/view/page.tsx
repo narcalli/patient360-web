@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { ImportStatusBadge, ImportUploadDialog } from "@/components/import-ui";
-import { AlertIcon, CheckIcon, ChevronLeft, ClockIcon, DownloadIcon, FileIcon, ReplaceIcon, TrashIcon, UndoIcon, UploadIcon } from "@/components/icons";
+import { AlertIcon, CheckIcon, ChevronLeft, ChevronRight, ClockIcon, DownloadIcon, FileIcon, ReplaceIcon, TrashIcon, UndoIcon, UploadIcon } from "@/components/icons";
 import { EmptyState, ErrorBanner, FormDialog, PageHeader, RowsSkeleton, SelectField, useToast, useUrlState } from "@/components/staff-ui";
-import { api, ApiError, type ImportIssue, type ImportIssuePage, type ImportLogView, type ImportTypeRow, type ImportView } from "@/lib/api";
+import { api, ApiError, downloadFile, type ImportIssue, type ImportIssuePage, type ImportLogView, type ImportTypeRow, type ImportView } from "@/lib/api";
 import { formatDateTime, formatSize } from "@/lib/format";
 import { hasRun, importError, ISSUE_KIND, plural, runProgress, timeLeft } from "@/lib/imports";
 
@@ -596,33 +596,53 @@ function RunHistory({ logs, busy, onRollBack }: { logs: ImportLogView[]; busy: b
 // ─── What is wrong, row by row ───────────────────────────────────────────────
 
 function Problems({ view }: { view: ImportView }) {
+  const toast = useToast();
   const [severity, setSeverity] = useState<Severity>("");
   const [rows, setRows] = useState<ImportIssue[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [failed, setFailed] = useState(false);
-  const [more, setMore] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const running = view.status === "IMPORTING";
 
+  /** Shows one page of problems, ten to a page. */
   const fetchPage = useCallback(
-    async (p: number, replace: boolean) => {
+    async (p: number) => {
+      setLoading(true);
       try {
         const q = new URLSearchParams({ page: String(p), ...(severity ? { severity } : {}) });
         const r = await api.get<ImportIssuePage>(`/admin/imports/${view.id}/issues?${q}`);
-        setRows((prev) => (replace ? r.items : [...prev, ...r.items]));
+        setRows(r.items);
         setTotal(r.total);
+        setPageSize(r.pageSize);
         setPage(p);
         setFailed(false);
       } catch {
         setFailed(true);
+      } finally {
+        setLoading(false);
       }
     },
     [view.id, severity],
   );
 
   useEffect(() => {
-    if (!running) void fetchPage(0, true);
+    if (!running) void fetchPage(0);
   }, [fetchPage, running]);
+
+  /** Every row with a problem, not just this page: an Excel sheet to fix and send back. */
+  async function downloadAll() {
+    setDownloading(true);
+    try {
+      await downloadFile(`/admin/imports/${view.id}/issues/download`, `${view.label} - problems.xlsx`);
+    } catch {
+      toast.show("We couldn’t download the problems. Try again.");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   if (running) return null;
   const nothing = total === 0 && !severity;
@@ -636,13 +656,23 @@ function Problems({ view }: { view: ImportView }) {
             <button type="button" className="chip" aria-pressed={severity === "ERROR"} onClick={() => setSeverity("ERROR")}>{ISSUE_KIND.ERROR.label}</button>
             <button type="button" className="chip" aria-pressed={severity === "SKIPPED"} onClick={() => setSeverity("SKIPPED")}>{ISSUE_KIND.SKIPPED.label}</button>
             <button type="button" className="chip" aria-pressed={severity === "WARNING"} onClick={() => setSeverity("WARNING")}>{ISSUE_KIND.WARNING.label}</button>
+            <button
+              type="button"
+              className="btn-secondary !px-3"
+              onClick={() => void downloadAll()}
+              disabled={downloading}
+              aria-label="Download every row with a problem as an Excel sheet"
+              title="Download every row with a problem (Excel)"
+            >
+              <DownloadIcon size={18} />
+            </button>
           </div>
         )}
       </div>
 
       <div className="mt-3">
         {failed ? (
-          <ErrorBanner text="We couldn’t load the list of problems." onRetry={() => void fetchPage(0, true)} />
+          <ErrorBanner text="We couldn’t load the list of problems." onRetry={() => void fetchPage(0)} />
         ) : total === null ? (
           <RowsSkeleton rows={3} />
         ) : nothing ? (
@@ -685,20 +715,19 @@ function Problems({ view }: { view: ImportView }) {
               </table>
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted" role="status" aria-live="polite">Showing {rows.length.toLocaleString("en-IN")} of {total.toLocaleString("en-IN")}.</p>
-              {rows.length < total && (
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  disabled={more}
-                  onClick={async () => {
-                    setMore(true);
-                    await fetchPage(page + 1, false);
-                    setMore(false);
-                  }}
-                >
-                  {more ? "Loading…" : "Show more"}
-                </button>
+              <p className="text-sm text-muted" role="status" aria-live="polite">
+                Showing {(page * pageSize + 1).toLocaleString("en-IN")}–{Math.min(total, page * pageSize + rows.length).toLocaleString("en-IN")} of {total.toLocaleString("en-IN")}.
+              </p>
+              {total > pageSize && (
+                <nav aria-label="Pages of problems" className="flex items-center gap-2">
+                  <button type="button" className="btn-secondary" disabled={loading || page === 0} onClick={() => void fetchPage(page - 1)}>
+                    <ChevronLeft size={16} /> Previous
+                  </button>
+                  <span className="tabular px-1 text-sm text-muted">Page {(page + 1).toLocaleString("en-IN")} of {Math.ceil(total / pageSize).toLocaleString("en-IN")}</span>
+                  <button type="button" className="btn-secondary" disabled={loading || (page + 1) * pageSize >= total} onClick={() => void fetchPage(page + 1)}>
+                    Next <ChevronRight size={16} />
+                  </button>
+                </nav>
               )}
             </div>
           </>
