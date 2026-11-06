@@ -187,7 +187,7 @@ function Report() {
         ) : (
           <div aria-busy={running} className={`space-y-4 transition-opacity ${running ? "opacity-60" : ""}`}>
             <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted" role="status">
-              <span>{result.dataAsOf ? `Data as of ${formatDay(result.dataAsOf)}` : "No bills imported yet"}</span>
+              <span>{result.dataAsOf ? `Data as of ${formatDay(result.dataAsOf)}` : "No data imported yet"}</span>
               {result.refreshedAt && <span>Refreshed {formatDateTime(result.refreshedAt)}</span>}
               {periodText(result.period) && <span>{periodText(result.period)}</span>}
               <span>Basis: {result.basisLabel}</span>
@@ -212,7 +212,7 @@ function Report() {
 
             {empty ? (
               <EmptyState icon={<AnalyticsIcon size={22} />} title="Nothing to show for these filters">
-                Try a wider period or fewer filters. If you expected data, check that the bills have been imported under{" "}
+                Try a wider period or fewer filters. If you expected data, check that the registrations and bills have been imported under{" "}
                 <Link href={`${base}/actions/imports`} className="font-semibold text-brand underline underline-offset-2">
                   Imports
                 </Link>

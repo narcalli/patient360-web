@@ -225,6 +225,7 @@ function ImportDetail() {
       {dialog === "rule" && (
         <ChangeRuleDialog
           view={view}
+          closesRollback={closesRollback}
           rules={types.find((t) => t.code === view.type.code)?.rules ?? []}
           onClose={() => setDialog(null)}
           onChanged={(next) => {
@@ -440,7 +441,7 @@ function RuleCard({ view, onChange }: { view: ImportView; onChange: () => void }
             <p className="font-semibold">{NO_RULE}</p>
           )}
           <p className="text-sm text-muted">
-            {view.can.changeRule || view.working ? "Says which columns of the sheet are read. Changing it checks the sheet again." : "The rule this import ran with."}
+            {view.can.changeRule || view.working ? (view.startedAt ? "The rule this import ran with. Changing it checks the sheet again, and the import can then be run again." : "Says which columns of the sheet are read. Changing it checks the sheet again.") : "The rule this import ran with."}
           </p>
         </div>
         {view.can.changeRule && (
@@ -453,7 +454,7 @@ function RuleCard({ view, onChange }: { view: ImportView; onChange: () => void }
   );
 }
 
-function ChangeRuleDialog({ view, rules, onClose, onChanged }: { view: ImportView; rules: ImportTypeRow["rules"]; onClose: () => void; onChanged: (next: ImportView) => void }) {
+function ChangeRuleDialog({ view, closesRollback, rules, onClose, onChanged }: { view: ImportView; closesRollback: boolean; rules: ImportTypeRow["rules"]; onClose: () => void; onChanged: (next: ImportView) => void }) {
   const [choice, setChoice] = useState(view.rule ? String(view.rule.id) : "none");
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -472,7 +473,11 @@ function ChangeRuleDialog({ view, rules, onClose, onChanged }: { view: ImportVie
   return (
     <FormDialog
       title="Change the import rule"
-      description={view.sheet && !view.sheetDeleted ? "The sheet is checked again with the rule you choose, and the numbers on this page are updated. Nothing is imported." : undefined}
+      description={
+        view.sheet && !view.sheetDeleted
+          ? `The sheet is checked again with the rule you choose, and the numbers on this page are updated. Nothing is imported.${closesRollback ? " This import has already run: once the rule is changed, that run can no longer be rolled back. The patients and bills it added stay, and the import can then be run again as another run." : view.startedAt ? " This import has already run, so it can then be run again as another run." : ""}`
+          : undefined
+      }
       submitLabel="Change rule"
       busyLabel="Starting…"
       busy={busy}
