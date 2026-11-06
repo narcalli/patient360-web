@@ -165,16 +165,22 @@ function ImportDetail() {
           {ran ? (
             <>
               <Stat label="Added" value={c.created} tone="ok" help="New patient records." />
-              <Stat label="Left out" value={c.skipped} help="Already registered, or repeated in the sheet." />
+              {c.updated > 0 && <Stat label="Updated" value={c.updated} tone="ok" help="Already registered. Their details now match the sheet." />}
+              <Stat label="Left out" value={c.skipped} help={c.updated > 0 ? "Repeated in the sheet, or already up to date." : "Already registered, or repeated in the sheet."} />
               <Stat label="Failed" value={c.failed} tone={c.failed ? "bad" : undefined} help="Couldn’t be saved. Run again to retry." />
               <Stat label="To fix" value={c.errors} tone={c.errors ? "bad" : undefined} help="Wrong in the sheet. Not imported." />
             </>
           ) : (
             <>
               <Stat label="Rows in the sheet" value={c.total} />
-              <Stat label="Ready to import" value={c.ready} tone={c.ready ? "ok" : undefined} help="Will become patients." />
+              <Stat
+                label="Ready to import"
+                value={c.ready}
+                tone={c.ready ? "ok" : undefined}
+                help={c.updating > 0 ? `${(c.ready - c.updating).toLocaleString("en-IN")} new patients, and ${c.updating.toLocaleString("en-IN")} already registered whose details will be updated.` : "Will become patients."}
+              />
               <Stat label="To fix" value={c.errors} tone={c.errors ? "bad" : undefined} help="Fix them in the sheet, then replace it." />
-              <Stat label="Will be left out" value={c.existing} help="Already registered, or repeated." />
+              <Stat label="Will be left out" value={c.existing} help={c.updating > 0 ? "Repeated in the sheet." : "Already registered, or repeated."} />
             </>
           )}
         </dl>
@@ -279,15 +285,22 @@ function ImportDetail() {
       {rollingBack && (
         <ConfirmDialog
           title={`Roll back run ${rollingBack.runNumber}?`}
-          confirmLabel={`Delete ${rollingBack.counts.created.toLocaleString("en-IN")} ${rollingBack.counts.created === 1 ? "patient" : "patients"}`}
+          confirmLabel={rollingBack.counts.created > 0 ? `Delete ${rollingBack.counts.created.toLocaleString("en-IN")} ${rollingBack.counts.created === 1 ? "patient" : "patients"}` : `Put back ${rollingBack.counts.updated.toLocaleString("en-IN")} ${rollingBack.counts.updated === 1 ? "patient" : "patients"}`}
           busy={busy}
           onCancel={() => setRollingBack(null)}
           onConfirm={() => void rollBack(rollingBack)}
         >
-          <p>
-            This permanently deletes the <span className="font-semibold">{plural(rollingBack.counts.created, "patient")}</span> this run added, and the sign-ins it made for them. Patients who were already registered are not touched. It can&rsquo;t be undone.
-          </p>
-          <p className="mt-2">If any of these patients already has a report or has signed in, nothing is deleted and you are told which.</p>
+          {rollingBack.counts.created > 0 && (
+            <p>
+              This permanently deletes the <span className="font-semibold">{plural(rollingBack.counts.created, "patient")}</span> this run added, and the sign-ins it made for them. It can&rsquo;t be undone.
+            </p>
+          )}
+          {rollingBack.counts.updated > 0 && (
+            <p className={rollingBack.counts.created > 0 ? "mt-2" : undefined}>
+              The <span className="font-semibold">{plural(rollingBack.counts.updated, "patient")}</span> this run updated go back to how they were before it. Other patients who were already registered are not touched.
+            </p>
+          )}
+          <p className="mt-2">If any of these patients already has a report, has signed in, or has been edited since the run, nothing is changed and you are told which.</p>
         </ConfirmDialog>
       )}
       {toast.ui}
@@ -322,7 +335,7 @@ function StatusPanel({ view, onRun, onUpload }: { view: ImportView; onRun: () =>
   const c = view.counts;
   if (view.status === "IMPORTING") {
     const pct = Math.round(runProgress(c) * 100);
-    const done = c.created + c.skipped + c.failed;
+    const done = c.created + c.updated + c.skipped + c.failed;
 
     return (
       <section aria-label="Progress" className="card mt-6 p-5">
@@ -392,10 +405,10 @@ function StatusPanel({ view, onRun, onUpload }: { view: ImportView; onRun: () =>
   return (
     <section aria-label="Result" role="status" className={`mt-6 rounded-[var(--radius-card)] p-5 ${issues ? "bg-warn-soft text-warn" : "bg-ok-soft text-ok"}`}>
       <p className="flex items-center gap-2 font-bold">
-        {issues ? <AlertIcon size={18} /> : <CheckIcon size={18} />} {plural(c.created, "patient")} added{view.finishedAt ? ` · ${formatDateTime(view.finishedAt)}` : ""}
+        {issues ? <AlertIcon size={18} /> : <CheckIcon size={18} />} {plural(c.created, "patient")} added{c.updated ? `, ${c.updated.toLocaleString("en-IN")} updated` : ""}{view.finishedAt ? ` · ${formatDateTime(view.finishedAt)}` : ""}
       </p>
       <p className="mt-1 text-sm">
-        {issues ? "Some rows were not imported. They are listed below with what to fix." : c.skipped ? `${c.skipped.toLocaleString("en-IN")} were left out because they were already registered or repeated.` : "Every row was imported."}
+        {issues ? "Some rows were not imported. They are listed below with what to fix." : c.skipped ? `${c.skipped.toLocaleString("en-IN")} were left out because they were ${c.updated ? "repeated or already up to date" : "already registered or repeated"}.` : "Every row was imported."}
       </p>
     </section>
   );
@@ -561,6 +574,7 @@ function RunHistory({ logs, busy, onRollBack }: { logs: ImportLogView[]; busy: b
                   </p>
                   <p className="mt-1 text-sm text-ink-soft">
                     {plural(l.counts.created, "patient")} added
+                    {l.counts.updated ? `, ${l.counts.updated.toLocaleString("en-IN")} updated` : ""}
                     {l.counts.skipped ? `, ${l.counts.skipped.toLocaleString("en-IN")} left out` : ""}
                     {l.counts.failed ? `, ${l.counts.failed.toLocaleString("en-IN")} failed` : ""}.
                   </p>

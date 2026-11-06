@@ -4,8 +4,8 @@ import { describe, it } from "node:test";
 import type { ImportStatus } from "../src/lib/api.ts";
 import { hasRun, importError, IMPORT_STATUS, plural, runProgress, sheetFileProblem, summaryLine, timeLeft } from "../src/lib/imports.ts";
 
-const counts = (over: Partial<Record<"total" | "ready" | "errors" | "existing" | "created" | "skipped" | "failed", number>> = {}) => ({
-  total: 0, ready: 0, errors: 0, existing: 0, created: 0, skipped: 0, failed: 0, ...over,
+const counts = (over: Partial<Record<"total" | "ready" | "errors" | "existing" | "updating" | "created" | "updated" | "skipped" | "failed", number>> = {}) => ({
+  total: 0, ready: 0, errors: 0, existing: 0, updating: 0, created: 0, updated: 0, skipped: 0, failed: 0, ...over,
 });
 
 describe("status", () => {
@@ -36,6 +36,8 @@ describe("runProgress", () => {
     assert.equal(runProgress(counts({ ready: 10 })), 0);
     assert.equal(runProgress(counts({ ready: 10, created: 3, skipped: 1, failed: 1 })), 0.5);
     assert.equal(runProgress(counts({ ready: 10, created: 10 })), 1);
+    // Patients updated count as done, like patients added.
+    assert.equal(runProgress(counts({ ready: 10, created: 2, updated: 3 })), 0.5);
   });
 
   it("never passes 1 or divides by nothing", () => {
@@ -52,12 +54,14 @@ describe("summaryLine", () => {
     assert.equal(line("READY", counts({ total: 1, ready: 1 })), "1 patient ready to import.");
     assert.equal(line("NEEDS_FIX", counts({ total: 3, errors: 3 })), "3 rows to fix in 3 rows.");
     assert.equal(line("NEEDS_FIX", counts(), false), "No sheet yet.");
+    assert.equal(line("READY", counts({ total: 5, ready: 5, updating: 3 })), "5 patients ready to import (3 already registered, to be updated).");
   });
 
   it("says what was done", () => {
     assert.equal(line("COMPLETED", counts({ total: 5, created: 4, skipped: 1 })), "4 patients added, 1 left out.");
     assert.equal(line("COMPLETED_WITH_ISSUES", counts({ total: 6, created: 3, skipped: 1, failed: 1, errors: 1 })), "3 patients added, 1 left out, 2 to fix.");
     assert.equal(line("COMPLETED", counts({ total: 1, created: 1 })), "1 patient added.");
+    assert.equal(line("COMPLETED", counts({ total: 6, created: 2, updated: 3, skipped: 1 })), "2 patients added, 3 updated, 1 left out.");
   });
 });
 

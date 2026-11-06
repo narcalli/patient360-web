@@ -496,7 +496,13 @@ export interface ImportView {
   /** The sheet file is gone; the import's results are kept. */
   sheetDeleted: boolean;
   uploadPending: boolean;
-  counts: { total: number; ready: number; errors: number; existing: number; created: number; skipped: number; failed: number };
+  counts: {
+    total: number; ready: number; errors: number; existing: number;
+    /** Of the ready rows, patients already registered whom the run updates. */
+    updating: number; created: number;
+    /** Patients already registered whose details the run changed. */
+    updated: number; skipped: number; failed: number;
+  };
   createdBy: string;
   createdAt: string;
   startedAt: string | null;
@@ -514,7 +520,7 @@ export interface ImportLogView {
   startedBy: string;
   startedAt: string;
   finishedAt: string | null;
-  counts: { total: number; created: number; skipped: number; failed: number };
+  counts: { total: number; created: number; updated: number; skipped: number; failed: number };
   rollback: {
     /** AVAILABLE until `until` (24 hours after the run finished), then EXPIRED; DONE once rolled back. */
     state: "AVAILABLE" | "NOTHING" | "RUNNING" | "EXPIRED" | "DONE";

@@ -44,7 +44,7 @@ export const hasRun = (i: Pick<ImportView, "startedAt" | "status">) => i.started
 
 /** How far a running import is, 0 to 1: the rows it has dealt with out of those it set out to. */
 export function runProgress(c: ImportView["counts"]): number {
-  const todo = c.created + c.skipped + c.failed;
+  const todo = c.created + c.updated + c.skipped + c.failed;
   const all = Math.max(c.ready, todo);
   return all === 0 ? 0 : Math.min(1, todo / all);
 }
@@ -60,13 +60,13 @@ export function summaryLine(i: Pick<ImportView, "status" | "counts" | "sheet" | 
     case "NEEDS_FIX":
       return i.sheet ? `${plural(c.errors, "row")} to fix in ${plural(c.total, "row")}.` : "No sheet yet.";
     case "READY":
-      return `${plural(c.ready, "patient")} ready to import${c.errors ? `, ${plural(c.errors, "row")} to fix` : ""}.`;
+      return `${plural(c.ready, "patient")} ready to import${c.updating ? ` (${c.updating.toLocaleString("en-IN")} already registered, to be updated)` : ""}${c.errors ? `, ${plural(c.errors, "row")} to fix` : ""}.`;
     case "IMPORTING":
       return `Importing ${plural(c.ready, "patient")}…`;
     case "COMPLETED":
     case "COMPLETED_WITH_ISSUES":
     case "FAILED":
-      return `${plural(c.created, "patient")} added${c.skipped ? `, ${c.skipped.toLocaleString("en-IN")} left out` : ""}${c.failed + c.errors ? `, ${(c.failed + c.errors).toLocaleString("en-IN")} to fix` : ""}.`;
+      return `${plural(c.created, "patient")} added${c.updated ? `, ${c.updated.toLocaleString("en-IN")} updated` : ""}${c.skipped ? `, ${c.skipped.toLocaleString("en-IN")} left out` : ""}${c.failed + c.errors ? `, ${(c.failed + c.errors).toLocaleString("en-IN")} to fix` : ""}.`;
   }
 }
 
