@@ -14,7 +14,7 @@ export const ShellPlaceholder = () => <div className="min-h-dvh bg-canvas" aria-
 
 /**
  * The frame every signed-in page shares: sidebar (drawer on phones) drawn from the session's nav, a header with an
- * optional slot, and the main area. Patients, admins and lab partners all get the same frame and only their own pages.
+ * optional slot (without one the bar shows on phones only, for the menu button), and the main area. Patients, admins and lab partners all get the same frame and only their own pages.
  */
 export function PortalShell({ session, header, children }: { session: Session; header?: React.ReactNode; children: React.ReactNode }) {
   const router = useRouter();
@@ -46,7 +46,7 @@ export function PortalShell({ session, header, children }: { session: Session; h
         <MobileDrawer {...sidebar} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur dark:bg-canvas/90">
+          <header className={`sticky top-0 z-20 border-b border-line bg-surface/90 backdrop-blur dark:bg-canvas/90 ${header ? "" : "lg:hidden"}`}>
             <div className="mx-auto flex h-16 max-w-[1180px] items-center gap-2 px-3 sm:px-4 lg:px-8">
               <button
                 type="button"
@@ -71,20 +71,12 @@ export function PortalShell({ session, header, children }: { session: Session; h
   );
 }
 
-/** A staff area (admin or lab partner): the frame with the person's role and organisation in the header. */
+/** A staff area (admin or lab partner): the frame without a header bar on desktop, so pages start at the top. */
 export function StaffArea({ children }: { children: React.ReactNode }) {
   const session = useSession();
   if (!session) return <ShellPlaceholder />;
   return (
-    <PortalShell
-      session={session}
-      header={
-        <p className="flex min-w-0 items-center gap-2 text-sm">
-          <span className="badge bg-subtle text-ink-soft ring-1 ring-line ring-inset">{session.roleLabel}</span>
-          {session.user.detail && session.user.detail !== session.roleLabel && <span className="truncate font-semibold">{session.user.detail}</span>}
-        </p>
-      }
-    >
+    <PortalShell session={session}>
       <div className="mx-auto max-w-[1180px]">{children}</div>
     </PortalShell>
   );

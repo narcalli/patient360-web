@@ -115,8 +115,8 @@ function PatientFields() {
 
   return (
     <>
-      <Link href="/admin/actions" className="btn-ghost -ml-3 mb-2">
-        <ChevronLeft size={16} /> Admin
+      <Link href="/admin/data" className="btn-ghost -ml-3 mb-2">
+        <ChevronLeft size={16} /> Data
       </Link>
       <PageHeader
         title="Patient fields"

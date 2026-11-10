@@ -45,5 +45,6 @@ export function parseHospital(raw: unknown): Hospital | null {
     privacyUrl: safeHttpsUrl(r.privacyUrl),
     supportPhone: text(r.supportPhone, 20),
     supportEmail: text(r.supportEmail, 255),
+    botPhone: text(r.botPhone, 20),
   };
 }

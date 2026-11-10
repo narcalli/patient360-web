@@ -21,6 +21,7 @@ const good = {
   privacyUrl: null,
   supportPhone: null,
   supportEmail: null,
+  botPhone: null,
 };
 
 describe("parseHospital", () => {

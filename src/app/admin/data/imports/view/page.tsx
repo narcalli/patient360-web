@@ -273,7 +273,7 @@ function ImportDetail() {
             void act(
               async () => {
                 await api.delete(`/admin/imports/${id}`);
-                router.replace("/admin/actions/imports");
+                router.replace("/admin/data/imports");
                 return null;
               },
               () => null,
@@ -311,7 +311,7 @@ function ImportDetail() {
 
 function Back() {
   return (
-    <Link href="/admin/actions/imports" className="btn-ghost -ml-3 mb-4">
+    <Link href="/admin/data/imports" className="btn-ghost -ml-3 mb-4">
       <ChevronLeft size={16} /> Import
     </Link>
   );
@@ -436,7 +436,7 @@ function RuleCard({ view, onChange }: { view: ImportView; onChange: () => void }
       <div className="mt-3 flex flex-wrap items-center gap-4">
         <div className="min-w-0 flex-1 basis-64">
           {view.rule ? (
-            <Link href={`/admin/actions/import-rules?rule=${view.rule.id}`} className="font-semibold text-brand underline [overflow-wrap:anywhere]">{view.rule.name}</Link>
+            <Link href={`/admin/data/import-rules?rule=${view.rule.id}`} className="font-semibold text-brand underline [overflow-wrap:anywhere]">{view.rule.name}</Link>
           ) : (
             <p className="font-semibold">{NO_RULE}</p>
           )}

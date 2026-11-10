@@ -73,8 +73,8 @@ function Imports() {
 
   return (
     <>
-      <Link href="/admin/actions" className="btn-ghost -ml-3 mb-2">
-        <ChevronLeft size={16} /> Admin
+      <Link href="/admin/data" className="btn-ghost -ml-3 mb-2">
+        <ChevronLeft size={16} /> Data
       </Link>
       <PageHeader
         title="Import"
@@ -131,7 +131,7 @@ function Imports() {
           onChecked={(view) => {
             setCreating(false);
             toast.show(view.working ? "Sheet uploaded. It is being checked." : view.status === "READY" ? `Sheet checked: ${plural(view.counts.ready, "patient")} ready to import.` : "Sheet uploaded. It needs fixing before it can be imported.");
-            router.push(`/admin/actions/imports/view?id=${view.id}`);
+            router.push(`/admin/data/imports/view?id=${view.id}`);
           }}
         />
       )}
@@ -143,7 +143,7 @@ function Imports() {
 function ImportLine({ item }: { item: ImportView }) {
   return (
     <li>
-      <Link href={`/admin/actions/imports/view?id=${item.id}`} className="flex items-center gap-4 px-4 py-4 transition-colors hover:bg-subtle sm:px-5">
+      <Link href={`/admin/data/imports/view?id=${item.id}`} className="flex items-center gap-4 px-4 py-4 transition-colors hover:bg-subtle sm:px-5">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand" aria-hidden="true">
           <FileIcon size={20} />
         </span>

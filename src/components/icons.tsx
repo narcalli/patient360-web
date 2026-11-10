@@ -38,6 +38,7 @@ export const SunIcon = (p: P) => (<Svg {...p}><circle cx="12" cy="12" r="4" /><p
 export const MoonIcon = (p: P) => (<Svg {...p}><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" /></Svg>);
 export const MonitorIcon = (p: P) => (<Svg {...p}><rect x="3" y="4" width="18" height="12.5" rx="2" /><path d="M8.5 20.5h7M12 16.5v4" /></Svg>);
 export const PhoneIcon = (p: P) => (<Svg {...p}><path d="M5 3.5h3.5l1.5 4.5-2.2 1.4a11 11 0 0 0 6.8 6.8L16 14l4.5 1.5V19a2 2 0 0 1-2 2A16.5 16.5 0 0 1 3 5.5a2 2 0 0 1 2-2z" /></Svg>);
+export const WhatsAppIcon = (p: P) => (<Svg {...p}><path d="M3.5 20.5 5 16A8.5 8.5 0 1 1 8 19z" /><path d="M9 8.5c0 3.3 2.7 6.5 6.5 6.5l1-1.5-2-1-1 .8a4 4 0 0 1-2-2l.8-1-1-2z" /></Svg>);
 export const MailIcon = (p: P) => (<Svg {...p}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3.5 6.5 8.5 6.5 8.5-6.5" /></Svg>);
 export const DropIcon = (p: P) => (<Svg {...p}><path d="M12 3s6.5 7 6.5 11.5a6.5 6.5 0 0 1-13 0C5.5 10 12 3 12 3z" /></Svg>);
 export const IdCardIcon = (p: P) => (<Svg {...p}><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="11" r="2" /><path d="M6 16c.6-1.5 1.7-2.2 3-2.2s2.4.7 3 2.2M14.5 10h3.5M14.5 13.5h3.5" /></Svg>);
@@ -69,6 +70,9 @@ export const ReplaceIcon = (p: P) => (<Svg {...p}><path d="M4 9h13l-3-3M20 15H7l
 export const AnalyticsIcon = (p: P) => (<Svg {...p}><path d="M4 20h16" /><rect x="5.5" y="11" width="3.5" height="7" rx="1" /><rect x="10.5" y="6" width="3.5" height="12" rx="1" /><rect x="15.5" y="9" width="3.5" height="9" rx="1" /></Svg>);
 export const ActionsIcon = (p: P) => (<Svg {...p}><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z" /></Svg>);
 
+// Data and Connectors, from Lucide (lucide.dev, ISC licence), redrawn like the report icons below.
+export const DatabaseIcon = (p: P) => (<Svg {...p}><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5" /><path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3" /></Svg>);
+export const PlugIcon = (p: P) => (<Svg {...p}><path d="M12 22v-5M9 8V2M15 8V2" /><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8z" /></Svg>);
 // The sidebar's icon names, as GET /api/session sends them (patient360-api src/lib/navigation.ts NAV_ICONS).
 export const SettingsIcon = (p: P) => (<Svg {...p}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></Svg>);
 // Report group icons, from Lucide (lucide.dev, ISC licence), redrawn here so the portal still ships no icon library.
@@ -77,7 +81,7 @@ export const RupeeIcon = (p: P) => (<Svg {...p}><path d="M6 3h12M6 8h12M6 13l8.5
 export const HeartPulseIcon = (p: P) => (<Svg {...p}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27" /></Svg>);
 export const ShieldCheckIcon = (p: P) => (<Svg {...p}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></Svg>);
 
-const NAV_ICONS = { overview: OverviewIcon, records: FileIcon, profile: UserIcon, patients: UsersIcon, lab: FlaskIcon, audit: ShieldIcon, upload: UploadIcon, users: IdCardIcon, actions: ActionsIcon, analytics: AnalyticsIcon, settings: SettingsIcon };
+const NAV_ICONS = { overview: OverviewIcon, records: FileIcon, profile: UserIcon, patients: UsersIcon, lab: FlaskIcon, audit: ShieldIcon, upload: UploadIcon, users: IdCardIcon, actions: ActionsIcon, analytics: AnalyticsIcon, settings: SettingsIcon, data: DatabaseIcon, connectors: PlugIcon };
 
 /** The icon for a nav item; an unknown name draws a dot, so a new item still shows. */
 export function NavIcon({ name, ...p }: P & { name: string }) {

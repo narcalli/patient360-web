@@ -103,6 +103,8 @@ export interface Hospital {
   privacyUrl: string | null;
   supportPhone: string | null;
   supportEmail: string | null;
+  /** The WhatsApp bot's number, from the API's WHATSAPP_BOT_PHONE. */
+  botPhone: string | null;
 }
 
 /** The shape of a patient's uuid, checked before asking the API for it. */

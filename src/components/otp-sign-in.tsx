@@ -20,6 +20,11 @@ export function minutes(seconds: number) {
 function sendError(e: unknown): string {
   if (!(e instanceof ApiError)) return "Something went wrong. Please try again.";
   if (e.code === "VALIDATION") return "Enter a valid 10-digit mobile number.";
+  if (e.code === "NOT_REGISTERED") {
+    // The number comes from the API's SUPPORT_PHONE, so it can change without a new web build.
+    const phone = typeof e.body.supportPhone === "string" ? e.body.supportPhone : "";
+    return `This mobile number isn't registered with us. Check the number, or contact the hospital${phone ? ` on ${phone}` : ""}.`;
+  }
   if (e.code === "TOO_SOON") return `Please wait ${e.body.retryAfterSeconds} seconds before asking for another code.`;
   if (e.code === "LOCKED") return `Too many wrong codes. Try again in ${minutes(Number(e.body.retryAfterSeconds))}.`;
   if (e.code === "NETWORK") return "You seem to be offline. Check your connection and try again.";
@@ -41,8 +46,8 @@ function verifyError(e: unknown): string {
 }
 
 /**
- * Mobile number, then a one-time code on WhatsApp, for every role (/login). The reply never says whether the number
- * is registered. `top` sits under the heading on the number step (the sign-in method switch).
+ * Mobile number, then a one-time code on WhatsApp, for every role (/login). A number that isn't registered is told
+ * so on the number step, and the code step never opens for it. `top` sits under the heading on the number step (the sign-in method switch).
  */
 export function OtpSignIn<T>({
   sendPath,
@@ -186,7 +191,7 @@ export function OtpSignIn<T>({
       </button>
       <h1 className="text-[28px] leading-tight font-extrabold">Enter the code</h1>
       <p className="mt-2 text-[15px] leading-relaxed text-muted">
-        If this number is registered with us, we have sent a {OTP_LENGTH}-digit code on WhatsApp to:
+        We have sent a {OTP_LENGTH}-digit code on WhatsApp to:
       </p>
       {/* The number, with a clear way to fix it if it was typed wrong. */}
       <div className="mt-3 flex items-center justify-between gap-3 rounded-[var(--radius-control)] border border-line bg-surface px-4 py-3">

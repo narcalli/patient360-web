@@ -44,8 +44,8 @@ function RuleList({ onOpen }: { onOpen: (ruleId: number) => void }) {
 
   return (
     <>
-      <Link href="/admin/actions" className="btn-ghost -ml-3 mb-2">
-        <ChevronLeft size={16} /> Admin
+      <Link href="/admin/data" className="btn-ghost -ml-3 mb-2">
+        <ChevronLeft size={16} /> Data
       </Link>
       <PageHeader
         title="Import rules"
@@ -428,11 +428,11 @@ function ColumnDialog({ rule, column, onClose, onSaved }: { rule: ImportRuleView
         value={fieldCode}
         onChange={choose}
         onRefresh={refreshFields}
-        addLink={{ href: "/admin/actions/patient-fields?add=1", label: "Add a field" }}
+        addLink={{ href: "/admin/data/patient-fields?add=1", label: "Add a field" }}
         options={choices.map((f) => [f.code, f.label, f.group])}
         placeholder="Choose one…"
         error={tried && !fieldCode ? "Choose what this column holds." : null}
-        hint={chosen?.helpText ?? <>Not on the list? <Link href="/admin/actions/patient-fields?add=1" target="_blank" className="font-semibold text-brand underline">Add it in Patient fields</Link>, then come back here.</>}
+        hint={chosen?.helpText ?? <>Not on the list? <Link href="/admin/data/patient-fields?add=1" target="_blank" className="font-semibold text-brand underline">Add it in Patient fields</Link>, then come back here.</>}
       />
       <TextField
         label="Column name in your Excel sheet"

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ConsentGate } from "@/components/consent-gate";
 import { ConsentSection } from "@/components/consent-section";
 import { PortalShell, ShellPlaceholder } from "@/components/portal-shell";
+import { WhatsAppBot } from "@/components/whatsapp-bot";
 import { ShellContext } from "@/components/shell-context";
 import { PatientSwitcher } from "@/components/shell-menus";
 import { api } from "@/lib/api";
@@ -68,6 +69,7 @@ function PatientArea({ session, children }: { session: Session; children: React.
           )}
         </div>
       </ShellContext.Provider>
+      <WhatsAppBot />
     </PortalShell>
   );
 }

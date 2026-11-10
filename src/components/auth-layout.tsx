@@ -3,6 +3,7 @@
 import { Logo, PortalTitle, TermsNote, useHospital } from "./brand";
 import { CheckIcon } from "./icons";
 import { ThemeSwitch } from "./theme";
+import { WhatsAppBot } from "./whatsapp-bot";
 
 /**
  * Two-panel frame for sign-in, picker and consent: brand panel on the left (desktop), form on the right.
@@ -48,6 +49,7 @@ export function AuthLayout({ children, terms = false }: { children: React.ReactN
           </p>
         )}
       </div>
+      <WhatsAppBot />
     </div>
   );
 }
