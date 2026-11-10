@@ -14,7 +14,8 @@ const files = (dir) =>
 
 const RULES = [
   { what: "colour outside the globals.css theme tokens", re: /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/g, skip: (f, line) => f.endsWith("globals.css") && /^\s+--color-[a-z-]+:/.test(line) },
-  { what: "hard-coded link", re: /\bhttps?:\/\/[^\s"'`)]+/g },
+  // wa.me is WhatsApp's own click-to-chat address (the number after it comes from the API), so it is the one link allowed.
+  { what: "hard-coded link", re: /\bhttps?:\/\/[^\s"'`)]+/g, skip: (_f, line) => line.includes("https://wa.me/${") },
   { what: "phone number", re: /\+91[\s-]?\d{4,5}[\s-]?\d{5}\b|\b[6-9]\d{9}\b/g, skip: (_f, line) => /placeholder=/.test(line) },
   { what: "email address", re: /\b[\w.+-]+@[\w-]+\.[\w.]+\b/g },
   { what: "hospital or clinic name", re: /\b[A-Z][a-zA-Z]+ (Hospitals?|Clinics?|Healthcare|Diagnostics)\b/g },

@@ -25,7 +25,7 @@ export function WhatsAppBot() {
       rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"
       title="Chat with us on WhatsApp"
-      className="fixed right-3 bottom-3 z-30 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[var(--shadow-pop)] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 lg:right-5 lg:bottom-5"
+      className="fixed right-3 bottom-3 z-30 inline-flex h-10 w-10 items-center justify-center rounded-full bg-whatsapp text-white shadow-[var(--shadow-pop)] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 lg:right-5 lg:bottom-5"
     >
       <WhatsAppIcon size={22} />
     </a>
