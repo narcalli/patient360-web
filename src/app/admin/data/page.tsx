@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ConnectorsPanel } from "@/components/connectors";
 import { IconTabs, type IconTab } from "@/components/icon-tabs";
 import { ClipboardIcon, PlugIcon, ReplaceIcon, UploadIcon } from "@/components/icons";
 import { PageHeader } from "@/components/staff-ui";
@@ -33,11 +34,6 @@ const MODELLING_TOOLS: Tool[] = [
   },
 ];
 
-type Connector = { key: string; name: string; description: string };
-
-// Systems the portal will take data from directly instead of by Excel import. Listed only for now: nothing to set up yet.
-const CONNECTORS: Connector[] = [{ key: "neuroncx", name: "NeuronCX", description: "Leads and patients from NeuronCX." }];
-
 /** Data: one page, one icon tab each (like Analytics): Excel imports, other systems' connectors, and modelling (what is kept about a patient). */
 export default function DataPage() {
   const session = useSessionContext();
@@ -61,19 +57,7 @@ export default function DataPage() {
             ) : current.key === "modelling" ? (
               <ToolGrid tools={MODELLING_TOOLS} />
             ) : (
-              <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] gap-3">
-                {CONNECTORS.map((c) => (
-                  <li key={c.key} className="card flex items-start gap-3 px-4 py-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand" aria-hidden="true">
-                      <PlugIcon size={22} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-bold">{c.name}</span>
-                      <span className="mt-0.5 block text-sm text-muted">{c.description}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <ConnectorsPanel />
             )}
           </div>
         </div>

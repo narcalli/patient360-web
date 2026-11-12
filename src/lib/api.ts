@@ -314,6 +314,66 @@ export interface LabPartner {
   users: LabPartnerUser[];
 }
 
+export type CredentialKind = "SIGNING_SECRET" | "API_KEY" | "BEARER_TOKEN" | "BASIC_AUTH";
+
+export interface ConnectionCredential {
+  id: number;
+  kind: CredentialKind;
+  label: string | null;
+  status: ActiveStatus;
+  createdAt: string;
+  validUntil: string | null;
+}
+
+export type EndpointPurpose = "FETCH_RECORD" | "FETCH_CHANGES" | "SEND" | "OTHER";
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
+/** One API of the other system that the portal calls. */
+export interface ConnectionEndpoint {
+  id: number;
+  code: string;
+  label: string;
+  purpose: EndpointPurpose;
+  method: HttpMethod;
+  url: string;
+  status: ActiveStatus;
+}
+
+export interface Connection {
+  id: number;
+  code: string;
+  label: string;
+  providerName: string | null;
+  direction: "INBOUND_WEBHOOK" | "OUTBOUND_API" | "BOTH" | null;
+  authType: "NONE" | "API_KEY" | "BEARER" | "BASIC" | "HMAC_SIGNATURE" | null;
+  status: ActiveStatus;
+  intervalMinutes: number | null;
+  lastSyncedAt: string | null;
+  lastEventAt: string | null;
+  /** Path the sender posts to, after our domain; null when the connection takes no webhooks. */
+  webhookPath: string | null;
+  /** Our public domain, as set in Settings. */
+  publicBaseUrl: string | null;
+  /** Domain + path: the address to give the sender. Null until the domain is set. */
+  webhookUrl: string | null;
+  needsSigningSecret: boolean;
+  credentials: ConnectionCredential[];
+  endpoints: ConnectionEndpoint[];
+  events24h: { received: number; queued: number; processed: number; skipped: number; failed: number };
+}
+
+export interface ConnectionEvent {
+  id: string;
+  sourceEventId: string;
+  eventType: string | null;
+  resourceId: string | null;
+  status: "RECEIVED" | "QUEUED" | "PROCESSED" | "SKIPPED" | "FAILED";
+  attempts: number;
+  errorCode: string | null;
+  receivedAt: string;
+  processedAt: string | null;
+}
+
 export interface AuditItem {
   id: number;
   at: string;
