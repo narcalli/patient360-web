@@ -8,6 +8,7 @@ import { api, ApiError, type Connection, type ConnectionCredential, type Connect
 import { formatDateTime } from "@/lib/format";
 
 const KIND_LABEL: Record<CredentialKind, string> = { SIGNING_SECRET: "Webhook secret (they send it to us)", API_KEY: "API key (we send it to them)", BEARER_TOKEN: "Bearer token (we send it to them)", BASIC_AUTH: "Basic auth (user:password)" };
+const AUTH_LABEL: Record<Exclude<CredentialKind, "SIGNING_SECRET">, string> = { BEARER_TOKEN: "Bearer token", API_KEY: "API key", BASIC_AUTH: "Basic auth (user:password)" };
 const PURPOSE_LABEL: Record<EndpointPurpose, string> = { FETCH_RECORD: "Fetch one record", FETCH_CHANGES: "Fetch what changed", SEND: "Send data", OTHER: "Other" };
 const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 const DIRECTION_LABEL = { INBOUND_WEBHOOK: "Receives webhooks", OUTBOUND_API: "Portal calls their API", BOTH: "Receives webhooks and calls their API" } as const;
@@ -220,6 +221,18 @@ function ConnectorCard({ c, reveal, onReveal, onDismissReveal, onChanged, toast 
                       <span className="mt-0.5 block text-xs text-muted [overflow-wrap:anywhere]">
                         <span className="font-mono font-semibold text-ink-soft">{e.method}</span> <span className="font-mono">{e.url}</span>
                       </span>
+                      <span className="mt-0.5 block text-xs text-muted">
+                        {e.auth ? (
+                          <>
+                            <KeyIcon size={12} className="mr-1 inline align-[-1px]" />
+                            {AUTH_LABEL[e.auth.kind]} · set {formatDateTime(e.auth.createdAt)}
+                          </>
+                        ) : c.credentials.some((k) => k.endpointId === null && k.kind !== "SIGNING_SECRET" && k.status === "ACTIVE") ? (
+                          "Uses the connection's key or token (see Credentials)"
+                        ) : (
+                          <span className="font-semibold text-warn">No key or token set: the call goes out unsigned</span>
+                        )}
+                      </span>
                     </span>
                     <span className="flex items-center gap-2">
                       <StatusBadge status={e.status} />
@@ -253,6 +266,7 @@ function ConnectorCard({ c, reveal, onReveal, onDismissReveal, onChanged, toast 
                       {k.label && <span className="font-normal text-muted"> · {k.label}</span>}
                     </span>
                     <span className="block text-xs text-muted">
+                      {k.endpointId !== null && <>Sent only to {c.endpoints.find((e) => e.id === k.endpointId)?.label ?? "one API"} · </>}
                       Added {formatDateTime(k.createdAt)}
                       {k.validUntil && ` · retired ${formatDateTime(k.validUntil)}`} · the value is stored encrypted and can&apos;t be viewed
                     </span>
@@ -348,15 +362,21 @@ function EndpointDialog({ connection, endpoint, onClose, onDone }: { connection:
   const [method, setMethod] = useState<HttpMethod>(endpoint?.method ?? "GET");
   const [url, setUrl] = useState(endpoint?.url ?? "");
   const [on, setOn] = useState(endpoint ? endpoint.status === "ACTIVE" : true);
+  // How the API is called: leave what it has (only when it has one), no key or token, or a new one.
+  const [authKind, setAuthKind] = useState<"KEEP" | "NONE" | keyof typeof AUTH_LABEL>(endpoint?.auth ? "KEEP" : "NONE");
+  const [authValue, setAuthValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const ready = label.trim().length >= 2 && url.trim().length > 0;
+  const newAuth = authKind !== "KEEP" && authKind !== "NONE";
+  const ready = label.trim().length >= 2 && url.trim().length > 0 && (!newAuth || authValue.length >= 8);
 
   async function submit() {
     setBusy(true);
     setError(null);
     try {
-      const body = { label: label.trim(), purpose, method, url: url.trim() };
+      // Left out, the API keeps what it has; null takes it off; an object sets a new one (the old is retired).
+      const auth = newAuth ? { kind: authKind, value: authValue } : authKind === "NONE" && endpoint?.auth ? null : undefined;
+      const body = { label: label.trim(), purpose, method, url: url.trim(), auth };
       if (endpoint) await api.put(`/admin/connections/${connection.id}/endpoints/${endpoint.id}`, { ...body, status: on ? "ACTIVE" : "DEACTIVATED" });
       else await api.post(`/admin/connections/${connection.id}/endpoints`, body);
       await onDone(endpoint ? "API saved." : "API added.");
@@ -369,7 +389,7 @@ function EndpointDialog({ connection, endpoint, onClose, onDone }: { connection:
   return (
     <FormDialog
       title={endpoint ? `Edit ${endpoint.label}` : `Add an API of ${connection.label}`}
-      description="An API of the other system that the portal calls. Keys and tokens are added under Credentials, never in the address."
+      description="An API of the other system that the portal calls. Its key or token is set here, never in the address."
       submitLabel="Save"
       busy={busy}
       canSubmit={ready}
@@ -391,6 +411,33 @@ function EndpointDialog({ connection, endpoint, onClose, onDone }: { connection:
         placeholder="The address, starting with https, with {id} where it changes"
         hint="The full https address. Write a part that changes per call as {name}, such as {id}."
       />
+      <SelectField
+        label="Called with"
+        value={authKind}
+        onChange={(v) => {
+          setAuthKind(v as typeof authKind);
+          setAuthValue("");
+        }}
+        options={[
+          ...(endpoint?.auth ? ([["KEEP", `Keep the current ${AUTH_LABEL[endpoint.auth.kind].toLowerCase()}`]] as [string, string][]) : []),
+          ["NONE", "No key or token"],
+          ...(Object.keys(AUTH_LABEL) as (keyof typeof AUTH_LABEL)[]).map((k): [string, string] => [k, endpoint?.auth ? `Replace with a new ${AUTH_LABEL[k].toLowerCase()}` : AUTH_LABEL[k]]),
+        ]}
+      />
+      {newAuth && (
+        <TextField
+          label={authKind === "BASIC_AUTH" ? "User and password" : authKind === "API_KEY" ? "API key" : "Token"}
+          value={authValue}
+          onChange={setAuthValue}
+          type="password"
+          // "off" is ignored for password fields: "new-password" keeps the browser from filling in a saved login here.
+          name="endpoint-secret"
+          autoComplete="new-password"
+          data-1p-ignore
+          data-lpignore="true"
+          hint={`${authKind === "BASIC_AUTH" ? "Written as user:password." : authKind === "BEARER_TOKEN" ? "Sent as Authorization: Bearer <token>." : "Sent in the X-API-Key header."} At least 8 characters. It is encrypted before it is stored and can't be viewed again.`}
+        />
+      )}
       {endpoint && (
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
           <input type="checkbox" className="h-5 w-5" checked={on} onChange={(e) => setOn(e.target.checked)} /> In use

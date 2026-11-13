@@ -323,6 +323,8 @@ export interface ConnectionCredential {
   status: ActiveStatus;
   createdAt: string;
   validUntil: string | null;
+  /** The API it is sent to; null for one the whole connection uses. */
+  endpointId: number | null;
 }
 
 export type EndpointPurpose = "FETCH_RECORD" | "FETCH_CHANGES" | "SEND" | "OTHER";
@@ -337,6 +339,8 @@ export interface ConnectionEndpoint {
   method: HttpMethod;
   url: string;
   status: ActiveStatus;
+  /** What the API is called with (the value is never returned); null when it is called without one. */
+  auth: { id: number; kind: Exclude<CredentialKind, "SIGNING_SECRET">; label: string | null; createdAt: string } | null;
 }
 
 export interface Connection {
