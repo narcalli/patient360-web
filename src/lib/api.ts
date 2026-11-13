@@ -314,7 +314,7 @@ export interface LabPartner {
   users: LabPartnerUser[];
 }
 
-export type CredentialKind = "SIGNING_SECRET" | "API_KEY" | "BEARER_TOKEN" | "BASIC_AUTH";
+export type CredentialKind = "SIGNING_SECRET" | "API_KEY" | "BEARER_TOKEN" | "BASIC_AUTH" | "CLIENT_CREDENTIALS";
 
 export interface ConnectionCredential {
   id: number;

@@ -7,8 +7,8 @@ import { EmptyState, ErrorBanner, FormDialog, RowsSkeleton, SelectField, StatusB
 import { api, ApiError, type Connection, type ConnectionCredential, type ConnectionEndpoint, type ConnectionEvent, type CredentialKind, type EndpointPurpose, type HttpMethod } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
 
-const KIND_LABEL: Record<CredentialKind, string> = { SIGNING_SECRET: "Webhook secret (they send it to us)", API_KEY: "API key (we send it to them)", BEARER_TOKEN: "Bearer token (we send it to them)", BASIC_AUTH: "Basic auth (user:password)" };
-const AUTH_LABEL: Record<Exclude<CredentialKind, "SIGNING_SECRET">, string> = { BEARER_TOKEN: "Bearer token", API_KEY: "API key", BASIC_AUTH: "Basic auth (user:password)" };
+const KIND_LABEL: Record<CredentialKind, string> = { SIGNING_SECRET: "Webhook secret (they send it to us)", API_KEY: "API key (we send it to them)", BEARER_TOKEN: "Bearer token (we send it to them)", BASIC_AUTH: "Basic auth (user:password)", CLIENT_CREDENTIALS: "Client id and secret (we log in for a token)" };
+const AUTH_LABEL: Record<Exclude<CredentialKind, "SIGNING_SECRET">, string> = { BEARER_TOKEN: "Bearer token", API_KEY: "API key", BASIC_AUTH: "Basic auth (user:password)", CLIENT_CREDENTIALS: "Client id and secret" };
 const PURPOSE_LABEL: Record<EndpointPurpose, string> = { FETCH_RECORD: "Fetch one record", FETCH_CHANGES: "Fetch what changed", SEND: "Send data", OTHER: "Other" };
 const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 const DIRECTION_LABEL = { INBOUND_WEBHOOK: "Receives webhooks", OUTBOUND_API: "Portal calls their API", BOTH: "Receives webhooks and calls their API" } as const;
@@ -577,7 +577,7 @@ function AddCredentialDialog({ connection, onClose, onDone }: { connection: Conn
         data-1p-ignore
         data-lpignore="true"
         optional={kind === "SIGNING_SECRET"}
-        hint={kind === "SIGNING_SECRET" ? "Leave empty and the portal makes a strong one and shows it once. Give it to the sender: they send it with every webhook. Or paste the one the sender gave you." : "At least 8 characters."}
+        hint={kind === "SIGNING_SECRET" ? "Leave empty and the portal makes a strong one and shows it once. Give it to the sender: they send it with every webhook. Or paste the one the sender gave you." : kind === "CLIENT_CREDENTIALS" ? "Written as client_id:client_secret. Needs an API coded \"token\" on this connection, which we log in at for a token that lasts an hour. At least 8 characters." : "At least 8 characters."}
       />
     </FormDialog>
   );
