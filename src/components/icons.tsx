@@ -79,6 +79,7 @@ export const SettingsIcon = (p: P) => (<Svg {...p}><circle cx="12" cy="12" r="3"
 export const TargetIcon = (p: P) => (<Svg {...p}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></Svg>);
 export const RupeeIcon = (p: P) => (<Svg {...p}><path d="M6 3h12M6 8h12M6 13l8.5 8M6 13h3" /><path d="M9 13c6.667 0 6.667-10 0-10" /></Svg>);
 export const HeartPulseIcon = (p: P) => (<Svg {...p}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27" /></Svg>);
+export const ActivityIcon = (p: P) => (<Svg {...p}><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></Svg>);
 export const ShieldCheckIcon = (p: P) => (<Svg {...p}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></Svg>);
 
 const NAV_ICONS = { overview: OverviewIcon, records: FileIcon, profile: UserIcon, patients: UsersIcon, lab: FlaskIcon, audit: ShieldIcon, upload: UploadIcon, users: IdCardIcon, actions: ActionsIcon, analytics: AnalyticsIcon, settings: SettingsIcon, data: DatabaseIcon, connectors: PlugIcon };
@@ -90,7 +91,7 @@ export function NavIcon({ name, ...p }: P & { name: string }) {
 }
 
 // A report group's icon, by its code. A group added later draws the analytics icon until it is given one here.
-const DOMAIN_ICONS = { acquisition: TargetIcon, revenue: RupeeIcon, patients: UsersIcon, care: HeartPulseIcon, trust: ShieldCheckIcon };
+const DOMAIN_ICONS = { acquisition: TargetIcon, revenue: RupeeIcon, patients: UsersIcon, care: HeartPulseIcon, trust: ShieldCheckIcon, traffic: ActivityIcon };
 
 export function DomainIcon({ code, ...p }: P & { code: string }) {
   const Icon = Object.hasOwn(DOMAIN_ICONS, code) ? DOMAIN_ICONS[code as keyof typeof DOMAIN_ICONS] : AnalyticsIcon;
