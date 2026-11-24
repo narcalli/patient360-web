@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useDocumentActions } from "@/components/documents";
+import { EpisodesToMatchNote, PatientEpisodesCard } from "@/components/episode-match";
 import { telHref } from "@/components/help";
 import { ChevronLeft, ChevronRight, DocTypeIcon, DownloadIcon, EyeIcon, FileIcon, KeyIcon, MailIcon, PhoneIcon, PlusIcon, UsersIcon } from "@/components/icons";
 import {
@@ -78,6 +79,7 @@ function Search() {
           )
         }
       />
+      <EpisodesToMatchNote />
       <div className="mt-6">
         <SearchBox
           label="Find a patient"
@@ -322,6 +324,8 @@ function Record({ data, actions, base, onChanged }: { data: StaffPatient; action
         </section>
 
         <LoginsCard patient={p} logins={data.logins} canManage={can(session, "patients.link")} onChanged={onChanged} />
+
+        <PatientEpisodesCard patient={p} />
       </div>
     </>
   );

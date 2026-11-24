@@ -194,6 +194,57 @@ export interface StaffSearchRow {
   documentCount: number;
 }
 
+/** One of a patient's care episodes, as their record shows it. */
+export interface RecordEpisode {
+  id: string;
+  type: string | null;
+  version: string | null;
+  episodeNo: number | null;
+  status: "ACTIVE" | "COMPLETED" | "DROPPED" | "EXPIRED";
+  startedOn: string | null;
+  closedOn: string | null;
+  linkedBy: "MOBILE" | "STAFF";
+  milestones: { done: number; total: number; overdue: number };
+}
+
+/** An episode on this patient's mobile that waits for staff to choose whose it is. */
+export interface WaitingEpisode {
+  id: string;
+  type: string | null;
+  version: string | null;
+  episodeNo: number | null;
+  name: string | null;
+  startedOn: string | null;
+  nameFits: boolean;
+  othersOnMobile: number;
+}
+
+/** A patient an episode may belong to: registered with the episode's mobile. */
+export interface EpisodeCandidate {
+  id: string;
+  patientCode: string;
+  fullName: string;
+  dob: string | null;
+  gender: string | null;
+  createdAt: string;
+  /** The name the care system gave reads as this patient's: a hint only. */
+  nameFits: boolean;
+}
+
+/** A care-system episode whose mobile several patients share, waiting for staff to choose the patient. */
+export interface EpisodeToMatch {
+  id: string;
+  type: string | null;
+  version: string | null;
+  name: string | null;
+  mobile: string;
+  episodeNo: number | null;
+  status: string;
+  startedOn: string | null;
+  receivedAt: string;
+  candidates: EpisodeCandidate[];
+}
+
 export interface SearchResult<T> {
   results: T[];
   /** The text was too short to search on. */
